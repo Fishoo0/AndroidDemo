@@ -66,15 +66,11 @@ public class EndlessViewPager extends ViewPager {
     }
 
     /**
-     * Modified for Endless. SmoothScroll has been disabled in force.
+     * You may want to use {@link #setActualCurrentItem(int)} ()} to set actual-position
      * <p>
      * <p>
-     * See {@link ViewPager#setCurrentItem(int)} for detail
      *
-     * @param item If position is < {@link EndlessPagerAdapter#getCountActually()} , it
-     *             would be treated as a actual-position in adapter's data list; If position
-     *             >= {@link EndlessPagerAdapter#getCountActually()} ,it would be treated as
-     *             endless-position; < 0 would throw {@link IllegalArgumentException}
+     * @param item
      */
     @Override
     public void setCurrentItem(int item) {
@@ -83,54 +79,57 @@ public class EndlessViewPager extends ViewPager {
 
 
     /**
-     * Modified for Endless.
-     * <p>
-     * Using {@link EndlessViewPager#setCurrentItem(int)} instead.
-     * <p>
-     * <p>
-     * See {@link ViewPager#setCurrentItem(int, boolean)} for detail
+     * You may want to use {@link #setActualCurrentItem(int)} ()} to set actual-position
      *
      * @param item
-     * @param smoothScroll FORCE TO BE FALSE ,THIS PARAMS IS IGNORED.
+     * @param smoothScroll
      */
-    @Deprecated
     @Override
     public void setCurrentItem(int item, boolean smoothScroll) {
-        if (!isEmpty()) {
-            item = ((EndlessPagerAdapter) getAdapter()).convertPositionToEndless(item);
-        }
-
-        if (!isEmpty()) {
-            if (item >= getAdapter().getCount() || item < 0) {
-                return;
-            }
-        }
-
-        super.setCurrentItem(item, false);
+        super.setCurrentItem(item, smoothScroll);
     }
 
     /**
-     * Using {@link #getCurrentItem(boolean)} instead.
+     * You may want to use {@link #getActualCurrentItem()} to get actual-position
      * <p>
-     * Returning actual-position.
      *
      * @return
      */
     @Override
     public int getCurrentItem() {
-        return getCurrentItem(true);
+        return super.getCurrentItem();
     }
 
 
     /**
-     * Getting current position,result differs from param convertToActualPosition.
+     * Setting ViewPager's current item. The item is actual-position ,would may be converted to endless-position
+     * internally.
      *
-     * @param convertToActualPosition false returns super.getCurrentItem ,true convert super.getCurrentItem
-     *                                to actual-position.
+     * @param item
+     */
+    public void setActualCurrentItem(int item) {
+        if (isEmpty()) {
+            super.setCurrentItem(item);
+            return;
+        }
+
+        if (item >= getEndlessAdapter().getCountActually() || item < 0) {
+            throw new IllegalArgumentException("Illegal args -> " + item + ", item must be in range of [0 ~ EndlessPagerAdapter#getActualCount]");
+        }
+
+        item = ((EndlessPagerAdapter) getAdapter()).convertPositionToEndless(item);
+        super.setCurrentItem(item, false);
+    }
+
+
+    /**
+     * Getting current position,witch would convert endless-position getting from {@link ViewPager#getCurrentItem()}
+     * to actual-position
+     *
      * @return
      */
-    public int getCurrentItem(boolean convertToActualPosition) {
-        if (isEmpty() || !convertToActualPosition) {
+    public int getActualCurrentItem() {
+        if (isEmpty()) {
             return super.getCurrentItem();
         } else {
             return getEndlessAdapter().convertPositionToActual(super.getCurrentItem());
@@ -294,7 +293,7 @@ public class EndlessViewPager extends ViewPager {
                 initEndlessPositionConverter(0, 0, getCountActually());
                 return;
             }
-            int currentItem = mViewPager.getCurrentItem(false);
+            int currentItem = mViewPager.getCurrentItem();
             Log.v(TAG, "viewpager's currentItem -> " + currentItem);
             if (currentItem <= getCountActually()) {
                 super.notifyDataSetChanged();
@@ -304,7 +303,7 @@ public class EndlessViewPager extends ViewPager {
                 initEndlessPositionConverter(currentItem, target, getCountActually());
                 mViewPager.setCurrentItem(target);
             } else {
-                int actualPosition = mViewPager.getCurrentItem(true);
+                int actualPosition = mViewPager.getActualCurrentItem();
                 Log.v(TAG, "actualPosition -> " + actualPosition);
                 initEndlessPositionConverter(actualPosition, currentItem, getCountActually());
                 mHandler.sendEmptyMessage(0);
@@ -345,7 +344,7 @@ public class EndlessViewPager extends ViewPager {
          */
         public final int convertPositionToActual(int endlessPosition) {
             Log.v(TAG, "convertPositionToActual -> " + endlessPosition);
-            if (!isCanSwipe() && endlessPosition != mViewPager.getCurrentItem(false)) {
+            if (!isCanSwipe() && endlessPosition != mViewPager.getCurrentItem()) {
                 Log.v(TAG, "Set this Fragment to be empty-fragment");
                 return -1;
             }
@@ -398,7 +397,7 @@ public class EndlessViewPager extends ViewPager {
                 return position;
             }
 
-            int currentItem = mViewPager.getCurrentItem(false);
+            int currentItem = mViewPager.getCurrentItem();
             if (currentItem < getCountActually()) {
                 Log.v(TAG, " currentItem is too small ,set to ENDLESS_LARGE_COUNT");
                 currentItem = ENDLESS_LARGE_COUNT;

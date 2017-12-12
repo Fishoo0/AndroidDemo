@@ -47,8 +47,7 @@ public class MainActivity extends FragmentActivity {
         adapter.mList.add("5");
         adapter.mList.add("6");
         adapter.notifyDataSetChanged();
-
-        mViewPager.setCurrentItem(4);
+        mViewPager.setActualCurrentItem(4);
 
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,10 +58,10 @@ public class MainActivity extends FragmentActivity {
                 adapter.mList.add("B");
                 adapter.notifyDataSetChanged();
 
-                int curentItem = mViewPager.getCurrentItem();
-                Log.v(TAG, " currentItem -> " + curentItem);
+                int currentItem = mViewPager.getActualCurrentItem();
+                Log.v(TAG, " currentItem -> " + currentItem);
 
-                mViewPager.setCurrentItem(curentItem);
+                mViewPager.setActualCurrentItem(currentItem);
             }
         });
 
@@ -139,15 +138,14 @@ public class MainActivity extends FragmentActivity {
                 public void onClick(View v) {
 //                    Toast.makeText(getContext(), "TextView -> " + textView.getText(), Toast.LENGTH_SHORT).show();
 
-                    int currentItem = mViewPager.getCurrentItem();
-                    Log.v(TAG, "currentItem -> " + currentItem);
+                    int currentItem = mViewPager.getActualCurrentItem();
+                    Log.e(TAG, "currentItem -> " + currentItem);
 
                     //using actual-position
-//                    mViewPager.setCurrentItem((mViewPager.getCurrentItem() + 1) % mViewPager.getEndlessAdapter().getCountActually());
+//                    mViewPager.setActualCurrentItem((mViewPager.getActualCurrentItem() + 1) % mViewPager.getEndlessAdapter().getCountActually());
 
                     //using endless-position
-
-                    mViewPager.setCurrentItem(mViewPager.getCurrentItem(false) + 1);
+                   mViewPager.setCurrentItem(mViewPager.getCurrentItem() + 1);
 
                 }
             });
