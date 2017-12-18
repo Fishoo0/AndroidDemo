@@ -1,4 +1,4 @@
-package demo.view;
+package com.example.view.viewpager.endless;
 
 import android.content.Context;
 import android.os.Handler;

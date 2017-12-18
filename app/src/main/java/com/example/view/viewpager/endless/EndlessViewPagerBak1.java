@@ -1,4 +1,4 @@
-package demo.view;
+package com.example.view.viewpager.endless;
 
 import android.content.Context;
 import android.support.v4.app.FragmentManager;
@@ -12,7 +12,7 @@ import android.view.MotionEvent;
  * Created by fishyu on 2017/10/12.
  */
 
-public class SimpleEndlessViewPager extends ViewPager {
+public class EndlessViewPagerBak1 extends ViewPager {
 
     static final String TAG = EndlessViewPager.class.getSimpleName();
 
@@ -23,11 +23,11 @@ public class SimpleEndlessViewPager extends ViewPager {
 
     private boolean mDisableSwipeWhenNotEnoughData = true;
 
-    public SimpleEndlessViewPager(Context context) {
+    public EndlessViewPagerBak1(Context context) {
         super(context);
     }
 
-    public SimpleEndlessViewPager(Context context, AttributeSet attrs) {
+    public EndlessViewPagerBak1(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
