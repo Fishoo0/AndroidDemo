@@ -4,9 +4,9 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,33 +15,28 @@ import android.widget.TextView;
 
 import com.example.base.BaseFragment;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by fishyu on 2017/12/18.
  */
 
-public class PagerAdapterNoFlash extends FragmentStatePagerAdapter {
+public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
 
     static final String TAG = PagerAdapterNoFlash.class.getSimpleName();
 
-    private List mList;
+    private List mList = new ArrayList();
 
     public PagerAdapterNoFlash(FragmentManager fm) {
         super(fm);
     }
 
     public void setList(List list) {
-        if (mList != null) {
-            mList.clear();
+        mList.clear();
+        if (list != null) {
+            mList.addAll(list);
         }
-        mList = list;
-    }
-
-    @Override
-    public void notifyDataSetChanged() {
-        super.notifyDataSetChanged();
-        Log.v(TAG, "notifyDataSetChanged");
     }
 
     @Override
@@ -49,43 +44,46 @@ public class PagerAdapterNoFlash extends FragmentStatePagerAdapter {
         Log.v(TAG, "getItem -> " + position);
         Object o = mList.get(position);
         if (o instanceof Integer) {
-            return MyFragment.newInstance(position);
+            return new MyFragment(position, null);
+        } else if (o instanceof DataWrapper) {
+            return new MyFragment(position, (DataWrapper) o);
         } else {
             throw new RuntimeException("Unsupported data in List in position -> " + position + " o -> " + o);
         }
     }
 
-
     @Override
-    public Object instantiateItem(ViewGroup container, int position) {
-        Log.v(TAG, "instantiateItem");
-        return super.instantiateItem(container, position);
+    public List getList() {
+        return mList;
     }
 
-    @Override
-    public void destroyItem(ViewGroup container, int position, Object object) {
-        super.destroyItem(container, position, object);
-        Log.v(TAG, "destroyItem");
-    }
 
     @Override
     public int getCount() {
-        return mList == null ? 0 : mList.size();
+        return mList.size();
     }
 
 
-    public static class MyFragment extends BaseFragment {
+    public static class MyFragment extends BaseFragment implements SimpleFragmentPagerAdapter.ISimplePagerFragment {
 
         public int mPosition;
+        public DataWrapper mDataWrapper;
 
-        public MyFragment(int position) {
-            mPosition = position;
-            TAG = TAG + " " + mPosition;
+        public MyFragment() {
+            super();
         }
 
 
-        public static MyFragment newInstance(int position) {
-            return new MyFragment(position);
+        public MyFragment(int position, DataWrapper dataWrapper) {
+            mPosition = position;
+            mDataWrapper = dataWrapper;
+        }
+
+
+        private TextView mTextView;
+
+        private void updateView() {
+            mTextView.setText(this.toString());
         }
 
 
@@ -96,12 +94,44 @@ public class PagerAdapterNoFlash extends FragmentStatePagerAdapter {
 
             TextView textView = new TextView(getContext());
             textView.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 30);
-            textView.setText(String.valueOf(mPosition));
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 50);
+            textView.setGravity(Gravity.CENTER);
+            mTextView = textView;
+            updateView();
             return textView;
         }
 
+        @Override
+        public String toString() {
+            return TAG + " mDataWrapper: " + mDataWrapper + " mPosition: " + mPosition;
+        }
 
+        @Override
+        public Object getDataFromAdapter() {
+            return mDataWrapper;
+        }
+
+        @Override
+        public void updatePositionInAdapter(int newPosition) {
+            mPosition = newPosition;
+            updateView();
+        }
+    }
+
+
+    public static class DataWrapper {
+        public String mDes;
+
+        public static DataWrapper newInstance(String des) {
+            DataWrapper dataWrapper = new DataWrapper();
+            dataWrapper.mDes = "Description : " + des;
+            return dataWrapper;
+        }
+
+        @Override
+        public String toString() {
+            return "mDes: " + mDes;
+        }
     }
 
 
