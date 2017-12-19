@@ -2,6 +2,7 @@ package com.example.view.viewpager.noflash;
 
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.PagerAdapter;
+import android.view.ViewGroup;
 
 import java.util.List;
 
@@ -30,6 +31,15 @@ public abstract class SimpleFragmentPagerAdapter extends FragmentPagerAdapter {
         return POSITION_NONE;
     }
 
+
+    @Override
+    public Object instantiateItem(ViewGroup container, int position) {
+        Object object = super.instantiateItem(container, position);
+        if (object instanceof ISimplePagerFragment) {
+            ((ISimplePagerFragment) object).updatePositionInAdapter(position);
+        }
+        return object;
+    }
 
     /**
      * The actual position of the passing data in Adapter's data List

@@ -83,7 +83,9 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
         private TextView mTextView;
 
         private void updateView() {
-            mTextView.setText(this.toString());
+            if(mTextView != null) {
+                mTextView.setText(this.toString());
+            }
         }
 
 
@@ -113,6 +115,7 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
 
         @Override
         public void updatePositionInAdapter(int newPosition) {
+            Log.v(TAG, "updatePositionInAdapter -> " + newPosition);
             mPosition = newPosition;
             updateView();
         }
