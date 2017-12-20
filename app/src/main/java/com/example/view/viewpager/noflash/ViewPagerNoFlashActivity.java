@@ -3,6 +3,7 @@ package com.example.view.viewpager.noflash;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.view.View;
 
 import com.example.base.BaseActivity;
@@ -15,7 +16,7 @@ import java.util.List;
  * Created by fishyu on 2017/12/18.
  */
 
-public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnClickListener {
+public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnClickListener, ViewPager.OnPageChangeListener {
 
     ViewPager mViewPager;
     PagerAdapterNoFlash mAdapter;
@@ -28,6 +29,8 @@ public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnCli
         setContentView(R.layout.noflash_activity);
 
         mViewPager = findViewById(R.id.viewpager);
+        mViewPager.addOnPageChangeListener(this);
+
 
         mAdapter = new PagerAdapterNoFlash(getSupportFragmentManager());
         mAdapter.setList(null);
@@ -68,5 +71,20 @@ public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnCli
                 break;
         }
 
+    }
+
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+        Log.v(TAG, "onPageScrolled position -> " + position + " positionOffset -> " + position + " positionOffsetPixels -> " + positionOffsetPixels);
+    }
+
+    @Override
+    public void onPageSelected(int position) {
+        Log.v(TAG, "onPageSelected -> " + position);
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+        Log.v(TAG, "onPageScrollStateChanged -> " + state);
     }
 }

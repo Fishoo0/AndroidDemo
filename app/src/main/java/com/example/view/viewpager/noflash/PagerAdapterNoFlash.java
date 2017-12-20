@@ -77,13 +77,15 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
         public MyFragment(int position, DataWrapper dataWrapper) {
             mPosition = position;
             mDataWrapper = dataWrapper;
+
+            TAG = this.toString();
         }
 
 
         private TextView mTextView;
 
         private void updateView() {
-            if(mTextView != null) {
+            if (mTextView != null) {
                 mTextView.setText(this.toString());
             }
         }
@@ -105,7 +107,7 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
 
         @Override
         public String toString() {
-            return TAG + " mDataWrapper: " + mDataWrapper + " mPosition: " + mPosition;
+            return MyFragment.class.getSimpleName() + " mDataWrapper: " + mDataWrapper + " mPosition: " + mPosition;
         }
 
         @Override
@@ -116,6 +118,9 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
         @Override
         public void updatePositionInAdapter(int newPosition) {
             Log.v(TAG, "updatePositionInAdapter -> " + newPosition);
+
+            TAG = this.toString();
+
             mPosition = newPosition;
             updateView();
         }
