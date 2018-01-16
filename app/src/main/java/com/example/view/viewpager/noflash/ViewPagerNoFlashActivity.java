@@ -10,6 +10,7 @@ import com.example.base.BaseActivity;
 import com.example.fishyu.fishdemo.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -32,7 +33,7 @@ public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnCli
         mViewPager.addOnPageChangeListener(this);
 
 
-        mAdapter = new PagerAdapterNoFlash(getSupportFragmentManager());
+        mAdapter = new PagerAdapterNoFlash(getSupportFragmentManager(), mViewPager);
         mAdapter.setList(null);
 
         mViewPager.setAdapter(mAdapter);
@@ -41,6 +42,16 @@ public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnCli
 
 
     private PagerAdapterNoFlash.DataWrapper mDataInit = PagerAdapterNoFlash.DataWrapper.newInstance("INIT");
+
+    private PagerAdapterNoFlash.DataWrapper[] mDataListInit = new PagerAdapterNoFlash.DataWrapper[]{
+            PagerAdapterNoFlash.DataWrapper.newInstance("A"),
+            PagerAdapterNoFlash.DataWrapper.newInstance("B"),
+            PagerAdapterNoFlash.DataWrapper.newInstance("C"),
+            PagerAdapterNoFlash.DataWrapper.newInstance("E"),
+            PagerAdapterNoFlash.DataWrapper.newInstance("F"),
+            PagerAdapterNoFlash.DataWrapper.newInstance("G"),
+            PagerAdapterNoFlash.DataWrapper.newInstance("H"),
+    };
 
     @Override
     public void onClick(View v) {
@@ -65,7 +76,7 @@ public class ViewPagerNoFlashActivity extends BaseActivity implements View.OnCli
 
             case R.id.clear:
                 mList.clear();
-                mList.add(mDataInit);
+                mList.addAll(Arrays.asList(mDataListInit));
                 mAdapter.setList(mList);
                 mAdapter.notifyDataSetChanged();
                 break;

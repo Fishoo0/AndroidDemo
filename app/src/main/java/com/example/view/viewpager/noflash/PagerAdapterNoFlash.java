@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -26,10 +27,25 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
 
     static final String TAG = PagerAdapterNoFlash.class.getSimpleName();
 
-    private List mList = new ArrayList();
+    /**
+     * Swipe to left
+     */
+    public static final boolean LEFT = true;
 
-    public PagerAdapterNoFlash(FragmentManager fm) {
+    /**
+     * Swipe to right
+     */
+    public static final boolean RIGHT = false;
+
+    private int mCurrentPosition = 0;
+    private boolean mDirection = LEFT;
+
+    private List mList = new ArrayList();
+    private ViewPager mViewPager;
+
+    public PagerAdapterNoFlash(FragmentManager fm, ViewPager viewPager) {
         super(fm);
+        mViewPager = viewPager;
     }
 
     public void setList(List list) {
@@ -37,6 +53,26 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
         if (list != null) {
             mList.addAll(list);
         }
+    }
+
+
+    /**
+     * Try to remove a item, and refresh view
+     *
+     * @param position
+     */
+    public void remove(final int position) {
+        Log.v(TAG, "remove -> " + position);
+        if (position < 0 || position >= getCount()) {
+            Log.e(TAG, "\t invalid position -> " + position);
+            return;
+        }
+
+        if (getLastSwipeDirection() == RIGHT && position - 1 >= 0) {
+            mViewPager.setCurrentItem(position - 1, false);
+        }
+        mList.remove(position);
+        notifyDataSetChanged();
     }
 
     @Override
@@ -63,6 +99,26 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
         return mList.size();
     }
 
+
+
+    @Override
+    public void setPrimaryItem(ViewGroup container, int position, Object object) {
+        super.setPrimaryItem(container, position, object);
+        if (position != mCurrentPosition) {
+            mDirection = position - mCurrentPosition > 0;
+            mCurrentPosition = position;
+        }
+    }
+
+    /**
+     *
+     * Getting last swipe direction
+     *
+     * @return {@link #LEFT} or {@link #RIGHT}
+     */
+    public boolean getLastSwipeDirection() {
+        return mDirection;
+    }
 
     public static class MyFragment extends BaseFragment implements SimpleFragmentPagerAdapter.ISimplePagerFragment {
 
@@ -100,6 +156,14 @@ public class PagerAdapterNoFlash extends SimpleFragmentPagerAdapter {
             textView.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 50);
             textView.setGravity(Gravity.CENTER);
+            textView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ViewPagerNoFlashActivity activity = (ViewPagerNoFlashActivity) v.getContext();
+                    activity.mAdapter.remove(mPosition);
+
+                }
+            });
             mTextView = textView;
             updateView();
             return textView;
