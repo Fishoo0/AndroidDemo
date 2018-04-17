@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.example.weibo.scrollablelistview.view.SupportSwipeWidgetScrollView
+        android:id="@+id/scrollview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <view
+            android:id="@+id/test"
+            class="com.example.weibo.scrollablelistview.view.SupportSwipeWidgetScrollView$HostLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:tag="header">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp"
+                    android:background="#77939743" />
+
+            </FrameLayout>
+
+            <fragment
+                class="com.example.weibo.scrollablelistview.ScrollableListViewFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:tag="swipe" />
+
+
+        </view>
+    </com.example.weibo.scrollablelistview.view.SupportSwipeWidgetScrollView>
+
+</LinearLayout>
