@@ -1,5 +1,7 @@
 package com.example.weibo.scrollablelistview.view;
 
+import android.animation.Animator;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
@@ -8,6 +10,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
@@ -71,12 +74,14 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
 
     private boolean mEnable = true;
 
+    private InternalScrollChangeListener mInternalScrollChangeListener;
+
     private OnScrollChangeListener mOnScrollChangeListener;
     private IOnScrollStatusChangeListener mOnStatusChangeListener;
 
-    private InternalScrollChangeListener mInternalScrollChangeListener;
-
     private HostLayout mHostLayout;
+
+    private ScrollAnimator mScrollAnimator = new ScrollAnimator();
 
     public SupportSwipeWidgetScrollView(Context context) {
         super(context);
@@ -98,24 +103,14 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
         setOverScrollMode(OVER_SCROLL_NEVER);
         mInternalScrollChangeListener = new InternalScrollChangeListener(new InternalStatusDealer());
 
-        setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    setToStatus(-1);
-//                    enableScroll(true);
-                }
-                return false;
-            }
-        });
-
         addOnLayoutChangeListener(new OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                Log.v(TAG, "scrollview -> " + getMeasuredHeight());
-                Log.v(TAG, "container -> " + mHostLayout.getMeasuredHeight());
-                Log.v(TAG, "header -> " + mHostLayout.getHeaderLayout().getMeasuredHeight());
-                Log.v(TAG, "getSwipeWidgetLayout -> " + mHostLayout.getSwipeWidgetLayout().getMeasuredHeight());
+                Log.v(TAG, "onLayoutChange");
+                Log.v(TAG, "SupportSwipeWidgetScrollView -> " + getMeasuredHeight());
+                Log.v(TAG, "HostLayout -> " + mHostLayout.getMeasuredHeight());
+                Log.v(TAG, "HeaderLayout -> " + mHostLayout.getHeaderLayout().getMeasuredHeight());
+                Log.v(TAG, "SwipeWidgetLayout -> " + mHostLayout.getSwipeWidgetLayout().getMeasuredHeight());
             }
         });
     }
@@ -177,6 +172,18 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
         return mHostLayout;
     }
 
+
+    /**
+     * Getting height of HostLayout's HeaderLayout
+     *
+     * @return
+     */
+    public int getHeaderLayoutHeight() {
+        return getHostLayout() == null || getHostLayout().getHeaderLayout() == null ?
+                0 : getHostLayout().getHeaderLayout().getMeasuredHeight();
+    }
+
+
     /**
      * Enable/Disable scrolling ability of this scrollview
      *
@@ -187,22 +194,21 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
     }
 
     /**
+     * Setting {@link OnScrollChangeListener}
+     *
+     * @param listener
+     */
+    public void setOnScrollChangeListener(OnScrollChangeListener listener) {
+        this.mOnScrollChangeListener = listener;
+    }
+
+    /**
      * Setting listener for responding to scroll status change
      *
      * @param listener
      */
     public void setOnStatusChangeListener(IOnScrollStatusChangeListener listener) {
         mOnStatusChangeListener = listener;
-    }
-
-
-    /**
-     * Setting {@link OnScrollChangeListener}
-     *
-     * @param mOnScrollChangeListener
-     */
-    public void setOnScrollChangeListener(OnScrollChangeListener mOnScrollChangeListener) {
-        this.mOnScrollChangeListener = mOnScrollChangeListener;
     }
 
     /**
@@ -218,11 +224,11 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
         switch (targetStatus) {
             case STATUS_SCROLL_NORMAL:
                 Log.e(TAG, "STATUS_SCROLL_NORMAL -> " + 0);
-                smoothScrollTo(0, 0);
+                mScrollAnimator.scrollTo(0);
                 break;
             case STATUS_SCROLL_SWIPE_WIDGET:
-                Log.e(TAG, "STATUS_SCROLL_SWIPE_WIDGET -> " + mHostLayout.getHeaderLayout().getMeasuredHeight());
-                scrollTo(0, mHostLayout.getHeaderLayout().getMeasuredHeight());
+                Log.e(TAG, "getHeaderLayoutHeight -> " + getHeaderLayoutHeight());
+                mScrollAnimator.scrollTo(getHeaderLayoutHeight());
                 break;
             default:
                 Log.e(TAG, "Setting status to its opposite side ");
@@ -232,6 +238,60 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
                     setToStatus(STATUS_SCROLL_NORMAL);
                 }
                 break;
+        }
+    }
+
+
+    final class ScrollAnimator implements Animator.AnimatorListener {
+
+        final String TAG = ScrollAnimator.class.getSimpleName();
+
+        ObjectAnimator animator;
+
+        public ScrollAnimator() {
+
+        }
+
+        final void initAnimator() {
+            if (animator == null) {
+                animator = new ObjectAnimator().ofInt(this, "value", 0, 0);
+                animator.setInterpolator(new AccelerateDecelerateInterpolator());
+                animator.addListener(this);
+                animator.setDuration(300);
+            }
+        }
+
+        public final void scrollTo(int target) {
+            Log.v(TAG, "scrollTo -> " + target);
+            initAnimator();
+
+            int current = getScrollY();
+            if (current != target && !animator.isRunning()) {
+                animator.setIntValues(current, target);
+                animator.start();
+            }
+        }
+
+        @SuppressWarnings("unused")
+        public void setValue(int value) {
+            SupportSwipeWidgetScrollView.this.scrollTo(0, value);
+        }
+
+        @Override
+        public void onAnimationStart(Animator animation) {
+        }
+
+        @Override
+        public void onAnimationEnd(Animator animation) {
+        }
+
+        @Override
+        public void onAnimationCancel(Animator animation) {
+        }
+
+        @Override
+        public void onAnimationRepeat(Animator animation) {
+
         }
     }
 
@@ -251,14 +311,13 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
 
         @Override
         public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-            Log.d(TAG, "onScrollChanged scrollY -> " + scrollY + " oldScrollY -> " + oldScrollY);
-            Log.d(TAG, "headerHeight -> " + getHostLayout().getHeaderLayout().getMeasuredHeight());
+            Log.e(TAG, "onScrollChanged scrollY -> " + scrollY + " oldScrollY -> " + oldScrollY + " headerHeight -> " + getHeaderLayoutHeight());
 
             // calculate status of current scroll status
-            if (scrollY >= getHostLayout().getHeaderLayout().getMeasuredHeight()) {
-                onStatusUpdate(STATUS_SCROLL_SWIPE_WIDGET);
-            } else {
+            if (getHeaderLayoutHeight() == 0 || scrollY == 0 || scrollY < getHeaderLayoutHeight()) {
                 onStatusUpdate(STATUS_SCROLL_NORMAL);
+            } else {
+                onStatusUpdate(STATUS_SCROLL_SWIPE_WIDGET);
             }
         }
 
@@ -404,22 +463,22 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
 
         @Override
         protected void measureChildWithMargins(View child, int parentWidthMeasureSpec, int widthUsed, int parentHeightMeasureSpec, int heightUsed) {
-            Log.e(TAG, "measureChildWithMargins -> " + child.getClass().getName() + " heightUsed -> " + heightUsed);
+            Log.v(TAG, "measureChildWithMargins -> " + child.getClass().getName() + " heightUsed -> " + heightUsed);
             int mode = MeasureSpec.getMode(parentHeightMeasureSpec);
             int size = MeasureSpec.getSize(parentHeightMeasureSpec);
 
             switch (mode) {
                 case MeasureSpec.UNSPECIFIED:
-                    Log.e(TAG, mode + " UNSPECIFIED -> " + size + " heightUsed -> " + heightUsed);
+                    Log.v(TAG, mode + " UNSPECIFIED -> " + size + " heightUsed -> " + heightUsed);
                     break;
                 case MeasureSpec.AT_MOST:
-                    Log.e(TAG, mode + " AT_MOST -> " + size + " heightUsed -> " + heightUsed);
+                    Log.v(TAG, mode + " AT_MOST -> " + size + " heightUsed -> " + heightUsed);
                     break;
                 case MeasureSpec.EXACTLY:
-                    Log.e(TAG, mode + " EXACTLY -> " + size + " heightUsed -> " + heightUsed);
+                    Log.v(TAG, mode + " EXACTLY -> " + size + " heightUsed -> " + heightUsed);
                     break;
                 default:
-                    Log.e(TAG, "" + mode + " " + size + " heightUsed -> " + heightUsed);
+                    Log.v(TAG, "" + mode + " " + size + " heightUsed -> " + heightUsed);
                     break;
             }
             // the key trick is here, let SwipeLayout has ScrollView's height

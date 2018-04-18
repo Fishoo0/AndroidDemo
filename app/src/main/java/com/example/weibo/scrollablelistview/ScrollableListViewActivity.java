@@ -3,9 +3,9 @@ package com.example.weibo.scrollablelistview;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.widget.ScrollView;
 
 import com.example.fishyu.fishdemo.R;
+import com.example.weibo.scrollablelistview.view.SupportSwipeWidgetScrollView;
 
 /**
  * Created by fishyu on 2018/4/11.
@@ -14,7 +14,7 @@ import com.example.fishyu.fishdemo.R;
 public class ScrollableListViewActivity extends Activity {
 
 
-    private ScrollView mScrollView;
+    private SupportSwipeWidgetScrollView mScrollView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -24,16 +24,8 @@ public class ScrollableListViewActivity extends Activity {
     }
 
 
-    int i = 0;
-
     @Override
     public void onBackPressed() {
-
-        if(i++ % 2 == 0 ) {
-            mScrollView.setEnabled(true);
-        } else {
-            //ba ba la
-        }
-
+        mScrollView.setToStatus(-1);
     }
 }
