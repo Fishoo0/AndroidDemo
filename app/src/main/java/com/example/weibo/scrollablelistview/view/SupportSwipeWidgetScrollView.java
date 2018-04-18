@@ -1,8 +1,6 @@
 package com.example.weibo.scrollablelistview.view;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
@@ -38,8 +36,8 @@ import android.widget.Toast;
  * Note:
  * <p>
  * 1，必须使用{@link HostLayout}做内容的根布局，且应该只有2个View:<br>
- * 一个是存放 header 的 Layout，并且设置tag为 {@link HostLayout#VIEW_TAG_HEAD},我们称之为 HeaderLayout;<br>
- * 一个为存放 滑动组件 的 Layout，并且设置tag为 {@link HostLayout#VIEW_TAG_SWIPE},我们称之为 SwipeWidgetLayout;<br>
+ * 一个是存放 header 的 Layout，我们称之为 HeaderLayout;<br>
+ * 一个为存放 滑动组件 的 Layout，我们称之为 SwipeWidgetLayout;<br>
  * <p>
  * 2,HeaderLayout 里面应该尽可能简单，不应该存在 可滑动组件
  * <p>
@@ -73,9 +71,10 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
 
     private boolean mEnable = true;
 
-    private IOnStatusChangeListener mOnStatusChangeListener;
+    private OnScrollChangeListener mOnScrollChangeListener;
+    private IOnScrollStatusChangeListener mOnStatusChangeListener;
 
-    private IScrollStatusCalculator mScrollStatusManager;
+    private InternalScrollChangeListener mInternalScrollChangeListener;
 
     private HostLayout mHostLayout;
 
@@ -97,7 +96,7 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
 
     private void init(Context context) {
         setOverScrollMode(OVER_SCROLL_NEVER);
-        mScrollStatusManager = new StatusCalculatorImp(new ScrollStatusDealer());
+        mInternalScrollChangeListener = new InternalScrollChangeListener(new InternalStatusDealer());
 
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -127,15 +126,9 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
         try {
             mHostLayout = (HostLayout) getChildAt(0);
         } catch (ClassCastException e) {
-            throw new RuntimeException("SupportSwipeWidgetScrollView must use SupportSwipeWidgetScrollView$ContainerLayout for its host Layout");
+            throw new RuntimeException("SupportSwipeWidgetScrollView must use SupportSwipeWidgetScrollView$HostLayout for its host Layout");
         }
         smoothScrollTo(0, 0);
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent ev) {
-        Log.v(TAG, "dispatchTouchEvent");
-        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -156,8 +149,32 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
                 return false;
             }
         }
-
         return super.onTouchEvent(ev);
+    }
+
+    @Override
+    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+        super.onScrollChanged(l, t, oldl, oldt);
+        mInternalScrollChangeListener.onScrollChange(this, l, t, oldl, oldt);
+
+        if (mOnScrollChangeListener != null) {
+            mOnScrollChangeListener.onScrollChange(this, l, t, oldl, oldt);
+        }
+    }
+
+    @Deprecated
+    @Override
+    public void setOnScrollChangeListener(View.OnScrollChangeListener l) {
+        super.setOnScrollChangeListener(l);
+    }
+
+    /**
+     * Getting internal {@link HostLayout}
+     *
+     * @return
+     */
+    public HostLayout getHostLayout() {
+        return mHostLayout;
     }
 
     /**
@@ -174,10 +191,19 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
      *
      * @param listener
      */
-    public void setOnStatusChangeListener(IOnStatusChangeListener listener) {
+    public void setOnStatusChangeListener(IOnScrollStatusChangeListener listener) {
         mOnStatusChangeListener = listener;
     }
 
+
+    /**
+     * Setting {@link OnScrollChangeListener}
+     *
+     * @param mOnScrollChangeListener
+     */
+    public void setOnScrollChangeListener(OnScrollChangeListener mOnScrollChangeListener) {
+        this.mOnScrollChangeListener = mOnScrollChangeListener;
+    }
 
     /**
      * Setting to target status mode.
@@ -200,7 +226,7 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
                 break;
             default:
                 Log.e(TAG, "Setting status to its opposite side ");
-                if (mScrollStatusManager.getScrollStatus() == STATUS_SCROLL_NORMAL) {
+                if (mInternalScrollChangeListener.getScrollStatus() == STATUS_SCROLL_NORMAL) {
                     setToStatus(STATUS_SCROLL_SWIPE_WIDGET);
                 } else {
                     setToStatus(STATUS_SCROLL_NORMAL);
@@ -210,13 +236,101 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
     }
 
 
-    @Override
-    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
-        super.onScrollChanged(l, t, oldl, oldt);
-        if (mScrollStatusManager != null) {
-            mScrollStatusManager.onScrollChange(this, l, t, oldl, oldt);
+    /**
+     * Dealing with all the scroll change staff
+     */
+    class InternalScrollChangeListener implements OnScrollChangeListener {
+
+        int lastStatus = STATUS_SCROLL_NORMAL;
+        IOnScrollStatusChangeListener statusChangeListener;
+
+
+        public InternalScrollChangeListener(IOnScrollStatusChangeListener statusChangeListener) {
+            InternalScrollChangeListener.this.statusChangeListener = statusChangeListener;
+        }
+
+        @Override
+        public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+            Log.d(TAG, "onScrollChanged scrollY -> " + scrollY + " oldScrollY -> " + oldScrollY);
+            Log.d(TAG, "headerHeight -> " + getHostLayout().getHeaderLayout().getMeasuredHeight());
+
+            // calculate status of current scroll status
+            if (scrollY >= getHostLayout().getHeaderLayout().getMeasuredHeight()) {
+                onStatusUpdate(STATUS_SCROLL_SWIPE_WIDGET);
+            } else {
+                onStatusUpdate(STATUS_SCROLL_NORMAL);
+            }
+        }
+
+        void onStatusUpdate(int newStatus) {
+            if (newStatus != lastStatus) {
+                statusChangeListener.onStatusChanged(newStatus, lastStatus);
+
+                if (mOnStatusChangeListener != null) {
+                    mOnStatusChangeListener.onStatusChanged(newStatus, lastStatus);
+                }
+                lastStatus = newStatus;
+            }
+        }
+
+        public int getScrollStatus() {
+            return lastStatus;
         }
     }
+
+    /**
+     * What actually to do when status change
+     */
+    class InternalStatusDealer implements IOnScrollStatusChangeListener {
+
+        @Override
+        public void onStatusChanged(int newStatus, int oldStatus) {
+            Log.e(TAG, "onStatusChanged -> " + STATUS_TO_STRING(newStatus));
+            Toast.makeText(getContext(), STATUS_TO_STRING(newStatus), Toast.LENGTH_SHORT).show();
+            if (newStatus == STATUS_SCROLL_NORMAL) {
+                enableScroll(true);
+            } else {
+                enableScroll(false);
+            }
+        }
+    }
+
+    /**
+     * Compatible
+     * <p>
+     * Same as {@link View.android.view.View.OnScrollChangeListener}.
+     */
+    @SuppressWarnings("JavadocReference")
+    public interface OnScrollChangeListener {
+
+        /**
+         * Same as {@link android.view.View.OnScrollChangeListener#onScrollChange(View, int, int, int, int)}.
+         *
+         * @param v
+         * @param scrollX
+         * @param scrollY
+         * @param oldScrollX
+         * @param oldScrollY
+         */
+        void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY);
+
+    }
+
+
+    /**
+     * Listener for notify scroll status change
+     */
+    public interface IOnScrollStatusChangeListener {
+
+        /**
+         * Status has been changed
+         *
+         * @param newStatus See {@link #STATUS_SCROLL_NORMAL} {@link #STATUS_SCROLL_SWIPE_WIDGET}
+         * @param oldStatus See {@link #STATUS_SCROLL_NORMAL} {@link #STATUS_SCROLL_SWIPE_WIDGET}
+         */
+        void onStatusChanged(int newStatus, int oldStatus);
+    }
+
 
     /**
      * View extends {@link LinearLayout}
@@ -226,9 +340,6 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
     public static class HostLayout extends LinearLayout {
 
         static final String TAG = HostLayout.class.getSimpleName();
-
-        static final String VIEW_TAG_HEAD = "header";
-        static final String VIEW_TAG_SWIPE = "swipe";
 
         private View mHeaderLayout;
         private View mSwipeWidgetLayout;
@@ -262,11 +373,14 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
                         " parent Layout.");
             }
 
-            mHeaderLayout = findViewWithTag(VIEW_TAG_HEAD);
-            mSwipeWidgetLayout = findViewWithTag(VIEW_TAG_SWIPE);
+            mHeaderLayout = getChildAt(0);
+            if (hasSwipeWidget(mHeaderLayout)) {
+                throw new RuntimeException("unsupported view hierarchy, HeaderLayout must not have a swipe-able widget.");
+            }
 
-            if (hasSwipeWidget(mHeaderLayout) || !hasSwipeWidget(mSwipeWidgetLayout)) {
-                throw new RuntimeException("unsupported view hierarchy, please see doc for detail.");
+            mSwipeWidgetLayout = getChildAt(1);
+            if (!hasSwipeWidget(mSwipeWidgetLayout)) {
+                throw new RuntimeException("unsupported view hierarchy, SwipeWidgetLayout must have a swipe-able widget.");
             }
         }
 
@@ -308,8 +422,7 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
                     Log.e(TAG, "" + mode + " " + size + " heightUsed -> " + heightUsed);
                     break;
             }
-
-            // 这里改变对拥有滑动控件的View的计算方式，使其拥有ScrollView的高度
+            // the key trick is here, let SwipeLayout has ScrollView's height
             if (child == getSwipeWidgetLayout()) {
                 heightUsed = 0;
                 parentHeightMeasureSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(parentHeightMeasureSpec), MeasureSpec.EXACTLY);
@@ -325,7 +438,6 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
          * @return
          */
         static final boolean hasSwipeWidget(View view) {
-            Log.v(TAG, "check -> " + view.getClass().getSimpleName());
             if (view instanceof RecyclerView || view instanceof ListView || view instanceof ScrollView) {
                 return true;
             } else if (view instanceof ViewGroup) {
@@ -343,114 +455,5 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
             }
         }
     }
-
-
-    /**
-     * Listener for notify scroll status change
-     */
-    public interface IOnStatusChangeListener {
-
-        /**
-         * Status has been changed
-         *
-         * @param newStatus See {@link #STATUS_SCROLL_NORMAL} {@link #STATUS_SCROLL_SWIPE_WIDGET}
-         * @param oldStatus See {@link #STATUS_SCROLL_NORMAL} {@link #STATUS_SCROLL_SWIPE_WIDGET}
-         */
-        void onStatusChanged(int newStatus, int oldStatus);
-    }
-
-
-    /**
-     * Dealing with all the scroll change staff
-     */
-    interface IScrollStatusCalculator {
-
-        /**
-         * Same as {@link View.android.view.View.OnScrollChangeListener}.
-         * <p>
-         * Calculate the status in this method.
-         *
-         * @param v
-         * @param scrollX
-         * @param scrollY
-         * @param oldScrollX
-         * @param oldScrollY
-         */
-        @SuppressWarnings("JavadocReference")
-        void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY);
-
-
-        /**
-         * heavy calculation method.
-         * <p>
-         * Calculate current status
-         *
-         * @return See {@link #STATUS_SCROLL_NORMAL} {@link #STATUS_SCROLL_SWIPE_WIDGET}
-         */
-        int getScrollStatus();
-    }
-
-
-    /**
-     * Dealing with all the scroll change staff
-     */
-    @TargetApi(Build.VERSION_CODES.M)
-    class StatusCalculatorImp implements IScrollStatusCalculator {
-
-        int lastStatus = STATUS_SCROLL_NORMAL;
-        IOnStatusChangeListener statusChangeListener;
-
-
-        public StatusCalculatorImp(IOnStatusChangeListener statusChangeListener) {
-            StatusCalculatorImp.this.statusChangeListener = statusChangeListener;
-        }
-
-
-        @Override
-        public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-            Log.d(TAG, "onScrollChanged scrollY -> " + scrollY + " oldScrollY -> " + oldScrollY);
-            Log.d(TAG, "headerHeight -> " + mHostLayout.getHeaderLayout().getMeasuredHeight());
-
-            // calculate status of current scroll status
-            if (scrollY >= mHostLayout.getHeaderLayout().getMeasuredHeight()) {
-                onStatusChange(STATUS_SCROLL_SWIPE_WIDGET);
-            } else {
-                onStatusChange(STATUS_SCROLL_NORMAL);
-            }
-        }
-
-        void onStatusChange(int newStatus) {
-            if (newStatus != lastStatus) {
-                statusChangeListener.onStatusChanged(newStatus, lastStatus);
-                lastStatus = newStatus;
-            }
-        }
-
-        @Override
-        public int getScrollStatus() {
-            return lastStatus;
-        }
-    }
-
-    /**
-     * What actually to do when status change
-     */
-    class ScrollStatusDealer implements IOnStatusChangeListener {
-
-        @Override
-        public void onStatusChanged(int newStatus, int oldStatus) {
-            Log.e(TAG, "onStatusChanged -> " + STATUS_TO_STRING(newStatus));
-            Toast.makeText(getContext(), STATUS_TO_STRING(newStatus), Toast.LENGTH_SHORT).show();
-            if (newStatus == STATUS_SCROLL_NORMAL) {
-                enableScroll(true);
-            } else {
-                enableScroll(false);
-            }
-            if (mOnStatusChangeListener != null) {
-                mOnStatusChangeListener.onStatusChanged(newStatus, oldStatus);
-            }
-        }
-    }
-
 
 }
