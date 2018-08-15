@@ -30,4 +30,6 @@ dependencies {
     compile 'com.google.dagger:dagger-android-support:2.11-rc2'
 
     compile 'com.android.support:recyclerview-v7:26.+'
+
+    compile project(path: ':yizhibopage')
 }
