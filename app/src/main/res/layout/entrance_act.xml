@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/button_activity_page"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:onClick="onClick"
+        android:padding="15dp"
+        android:text="ActivityPage"
+        android:textColor="@android:color/holo_green_dark"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/button_fragment_page"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:onClick="onClick"
+        android:padding="15dp"
+        android:text="FragmentPage"
+        android:textColor="@android:color/holo_green_dark"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/button_viewpager_page"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:onClick="onClick"
+        android:padding="15dp"
+        android:text="ViewPagerPage"
+        android:textColor="@android:color/holo_green_dark"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/button_listview_page"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:onClick="onClick"
+        android:padding="15dp"
+        android:text="ListViewPage"
+        android:textColor="@android:color/holo_green_dark"
+        android:textSize="20sp" />
+
+</LinearLayout>
