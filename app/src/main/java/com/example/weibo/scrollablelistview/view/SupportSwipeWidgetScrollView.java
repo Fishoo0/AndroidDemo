@@ -311,7 +311,7 @@ public class SupportSwipeWidgetScrollView extends ScrollView {
 
         @Override
         public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-            Log.e(TAG, "onScrollChanged scrollY -> " + scrollY + " oldScrollY -> " + oldScrollY + " headerHeight -> " + getHeaderLayoutHeight());
+            Log.e(TAG, "configureView scrollY -> " + scrollY + " oldScrollY -> " + oldScrollY + " headerHeight -> " + getHeaderLayoutHeight());
 
             // calculate status of current scroll status
             if (getHeaderLayoutHeight() == 0 || scrollY == 0 || scrollY < getHeaderLayoutHeight()) {

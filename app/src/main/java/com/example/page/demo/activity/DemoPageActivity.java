@@ -1,4 +1,4 @@
-package com.example.page.demo;
+package com.example.page.demo.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -6,6 +6,8 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 
 import com.example.fishyu.fishdemo.R;
+import com.example.page.demo.DemoPage;
+import com.example.page.demo.PlayerPage;
 import com.example.yizhibopage.page.IPage;
 import com.example.yizhibopage.page.impletment.SimplePageParent;
 import com.example.yizhibopage.page.plugin.ActivityPagePlugin;
@@ -16,11 +18,14 @@ public class DemoPageActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SimplePageParent pageManager = (SimplePageParent) LayoutInflater.from(this).inflate(R.layout.demo_activity, null);
-        pageManager.setPolicy(SimplePageParent.mDefaultPolicy);
-        pageManager.getPageManager().install(this, null, IPage.NONE);
 
-        mPagePlugin = new ActivityPagePlugin(this, pageManager);
+        DemoPage page = new DemoPage(this);
+        Bundle bundle = new Bundle();
+        bundle.putString("url", PlayerPage.URLS[1]);
+        page.setArgument(bundle);
+        page.install(SimplePageParent.mDefaultPolicy);
+
+        mPagePlugin = new ActivityPagePlugin(this, page);
         mPagePlugin.onCreate(savedInstanceState);
     }
 

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.example.yizhibopage.page.impletment.SimplePageParent xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/demo_page_manager"
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -8,6 +7,7 @@
         android:id="@+id/level0"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#988744"
         android:tag="0">
 
         <com.example.page.demo.PlayerPage
@@ -69,4 +69,4 @@
     </com.example.yizhibopage.page.impletment.SimplePageParent>
 
 
-</com.example.yizhibopage.page.impletment.SimplePageParent>
+</merge>

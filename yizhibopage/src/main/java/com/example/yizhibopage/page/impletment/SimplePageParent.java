@@ -24,7 +24,7 @@ public class SimplePageParent extends SimplePage {
 
     private int mLevel;
 
-    private List<IPage> mPages = new ArrayList<>();
+    private List<IPage> mPages;
 
     public SimplePageParent(@NonNull Context context) {
         super(context);
@@ -43,20 +43,22 @@ public class SimplePageParent extends SimplePage {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
+
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         for (IPage page : mPages) {
-            page.onCreate(bundle);
+            page.onCreate(page.getArgument());
         }
     }
 
     @Override
     public View onCreateView(ViewParent viewParent) {
+        View view = super.onCreateView(viewParent);
         for (IPage page : mPages) {
-            page.onCreateView(viewParent);
+            page.onCreateView(SimplePageParent.this);
         }
-        return super.onCreateView(viewParent);
+        return view;
     }
 
     @Override
@@ -108,8 +110,18 @@ public class SimplePageParent extends SimplePage {
     }
 
     @Override
+    public void setArgument(Bundle bundle) {
+        super.setArgument(bundle);
+        //child need to reset too
+        for (IPage page : mPages) {
+            page.setArgument(bundle);
+        }
+    }
+
+    @Override
     protected void init(Context context, AttributeSet attrs) {
         super.init(context, attrs);
+        mPages = new ArrayList<>();
         int level = 0;
         if (getTag() instanceof String || getTag() instanceof Integer) {
             try {
@@ -153,8 +165,12 @@ public class SimplePageParent extends SimplePage {
 
     private IPolicy mPolicy = mDefaultPolicy;
 
-    public void setPolicy(IPolicy policy) {
-        mPolicy = policy;
+    /**
+     * Can only be used by TOP LEVEL IPage
+     */
+    public void install(IPolicy policy) {
+        mPolicy = policy == null ? mDefaultPolicy : policy;
+        getPageManager().install(getContext(), null, IPage.NONE);
     }
 
     /**
@@ -181,15 +197,15 @@ public class SimplePageParent extends SimplePage {
                 final View view = getChildAt(i);
                 if (view instanceof IPage) {
                     final IPage page = (IPage) view;
+                    page.setArgument(getArgument());
                     final long delay = page instanceof SimplePageParent ? mPolicy.getDelay((SimplePageParent) page) : 0;
                     postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            page.getPageManager().install(getPageManager().getContainer(), getPageManager().getViewParent(), getPageManager().getStatus());
+                            page.getPageManager().install(getPageManager().getContainer(), SimplePageParent.this, getPageManager().getStatus());
                             mPages.add(page);
                         }
                     }, delay);
-
                     Log.d(TAG, "\t install child view -> " + view + ", and scheduled for showing in " + delay + " milliseconds.");
                 } else {
                     Log.d(TAG, "\t pass child view -> " + view);

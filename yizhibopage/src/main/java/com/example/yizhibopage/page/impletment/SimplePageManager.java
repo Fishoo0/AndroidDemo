@@ -2,6 +2,7 @@ package com.example.yizhibopage.page.impletment;
 
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
@@ -44,91 +45,104 @@ public class SimplePageManager implements IPage.IPageManager {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            if (DEBUG) Log.e(TAG, "handleMessage -> " + stateToString(msg.what));
-            switch (msg.what) {
+            int targetStatus = msg.what;
+            if (DEBUG) Log.i(TAG, "handleMessage -> " + stateToString(targetStatus));
+
+            if (targetStatus >= ON_CREATE && mCurrentStatus < ON_CREATE) {
+                executeLifeCycle(ON_CREATE);
+            }
+
+            if (targetStatus >= ON_CREATE_VIEW && mCurrentStatus < ON_CREATE_VIEW) {
+                executeLifeCycle(ON_CREATE_VIEW);
+            }
+
+            if (targetStatus >= ON_START && (mCurrentStatus < ON_START || mCurrentStatus == ON_STOP)) {
+                executeLifeCycle(ON_START);
+            }
+
+            if (targetStatus >= ON_RESUME && (mCurrentStatus < ON_RESUME || mCurrentStatus == ON_PAUSE)) {
+                executeLifeCycle(ON_RESUME);
+            }
+
+            if (targetStatus >= ON_PAUSE && mCurrentStatus < ON_PAUSE) {
+                executeLifeCycle(ON_PAUSE);
+            }
+
+            if (targetStatus >= ON_STOP && mCurrentStatus < ON_STOP) {
+                executeLifeCycle(ON_STOP);
+            }
+
+            if (targetStatus >= ON_DESTROY_VIEW && mCurrentStatus < ON_DESTROY_VIEW) {
+                executeLifeCycle(ON_DESTROY_VIEW);
+            }
+
+            if (targetStatus >= ON_DESTROY && mCurrentStatus < ON_DESTROY) {
+                executeLifeCycle(ON_DESTROY);
+            }
+        }
+
+
+        /**
+         * Execute
+         *
+         * @param status
+         */
+        public void executeLifeCycle(int status) {
+            if (DEBUG) Log.e(TAG, "executeLifeCycle -> " + stateToString(status));
+            switch (status) {
                 case ON_CREATE:
                     if (mPage.getContext() == null) {
                         throw new IllegalStateException("IPage#getContext() must not be null when onCreate!");
                     }
                     mPage.onCreate(mPage.getArgument());
+                    mCurrentStatus = status;
                     break;
                 case ON_CREATE_VIEW:
                     mPage.onCreateView(mViewParent);
+                    mCurrentStatus = status;
                     break;
                 case ON_START:
                     mPage.onStart();
+                    mCurrentStatus = status;
                     break;
                 case ON_RESUME:
                     mPage.onResume();
+                    mCurrentStatus = status;
                     break;
                 case ON_PAUSE:
                     mPage.onPause();
+                    mCurrentStatus = status;
                     break;
                 case ON_STOP:
                     mPage.onStop();
+                    mCurrentStatus = status;
                     break;
                 case ON_DESTROY_VIEW:
                     mPage.onDestroyView();
+                    mCurrentStatus = status;
                     break;
                 case ON_DESTROY:
                     mPage.onDestroy();
+                    mCurrentStatus = status;
                     break;
                 default:
-                    throw new IllegalStateException("Invalid call in #handleMessage(" + stateToString(msg.what) + ")");
+                    throw new IllegalStateException("Invalid call in #handleMessage(" + stateToString(status) + ")");
             }
-            mCurrentStatus = msg.what;
         }
 
 
-        public void execute(int status, boolean post) {
-            if (post) {
-                sendEmptyMessage(status);
+        protected void setStatus(int targetStatus, boolean align, boolean post) {
+            if (align) {
+                if (post) {
+                    sendEmptyMessage(targetStatus);
+                } else {
+                    handleMessage(obtainMessage(targetStatus));
+                }
             } else {
-                handleMessage(obtainMessage(status));
+                mCurrentStatus = targetStatus;
             }
         }
 
-        /**
-         * Align IPage's Life Cycle
-         *
-         * @param currentStatus
-         * @param targetStatus
-         * @param post
-         */
-        protected void alignLifeCycle(int currentStatus, int targetStatus, boolean post) {
-            // onCreate can not be auto aligned
-            if (targetStatus >= ON_CREATE && currentStatus < ON_CREATE) {
-                execute(ON_CREATE, post);
-            }
-
-            if (targetStatus >= ON_CREATE_VIEW && currentStatus < ON_CREATE_VIEW) {
-                execute(ON_CREATE_VIEW, post);
-            }
-
-            if (targetStatus >= ON_START && (currentStatus < ON_START || currentStatus == ON_STOP)) {
-                execute(ON_START, post);
-            }
-
-            if (targetStatus >= ON_RESUME && (currentStatus < ON_RESUME || currentStatus == ON_PAUSE)) {
-                execute(ON_RESUME, post);
-            }
-
-            if (targetStatus >= ON_PAUSE && currentStatus < ON_PAUSE) {
-                execute(ON_PAUSE, post);
-            }
-
-            if (targetStatus >= ON_STOP && currentStatus < ON_STOP) {
-                execute(ON_STOP, post);
-            }
-
-            if (targetStatus >= ON_DESTROY_VIEW && currentStatus < ON_DESTROY_VIEW) {
-                execute(ON_DESTROY_VIEW, post);
-            }
-
-            if (targetStatus >= ON_DESTROY && currentStatus < ON_DESTROY) {
-                execute(ON_DESTROY, post);
-            }
-        }
     }
 
     private LifeCycleAlignHandler mAlignHandler = new LifeCycleAlignHandler();
@@ -202,6 +216,8 @@ public class SimplePageManager implements IPage.IPageManager {
             mContext = (Context) container;
         } else if (container instanceof android.support.v4.app.Fragment) {
             mContext = ((android.support.v4.app.Fragment) container).getActivity();
+        } else if (container instanceof Fragment) {
+            mContext = ((Fragment) container).getActivity();
         } else if (container instanceof View) {
             mContext = ((View) container).getContext();
         } else {
@@ -228,13 +244,15 @@ public class SimplePageManager implements IPage.IPageManager {
     }
 
     @Override
-    public void setStatus(int status, boolean align) {
-        if (DEBUG) Log.e(TAG, "setStatus -> " + stateToString(status) + " align -> " + align);
-        if (align) {
-            mAlignHandler.alignLifeCycle(mCurrentStatus, status, true);
-        } else {
-            mCurrentStatus = status;
+    public void setStatus(int targetStatus, boolean align) {
+        if (DEBUG) Log.e(TAG, "setStatus -> " + stateToString(targetStatus) + " align -> " + align);
+
+        if (mContext == null) {
+            throw new IllegalStateException(mPage + " has not been installed yet, invalid #setStatus status -> " + targetStatus + " align ->  " + align);
         }
+
+        mAlignHandler.setStatus(targetStatus, align, true);
+
     }
 
     @Override

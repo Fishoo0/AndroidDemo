@@ -1,6 +1,7 @@
 package com.example.fishyu.fishdemo;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Trace;
@@ -10,8 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.example.activity.JumpActivity;
-import com.example.application.DemoApplication;
+import com.example.page.demo.EntranceActivity;
 
 public class SplashActivity extends Activity {
 
@@ -21,24 +21,20 @@ public class SplashActivity extends Activity {
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-
-
         super.onCreate(savedInstanceState);
-
 
         setContentView(R.layout.splash_activity);
 
         findViewById(R.id.cover).setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                JumpActivity.jumpToThis(SplashActivity.this);
+//                JumpActivity.jumpToThis(SplashActivity.this);
+                startActivity(new Intent(SplashActivity.this, EntranceActivity.class));
                 return true;
             }
         });
 
 //        reportFullyDrawn();
-
-
     }
 
 
@@ -47,7 +43,7 @@ public class SplashActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        testTraceAgain();
+//        testTraceAgain();
     }
 
     class MyTread extends Thread {
@@ -74,7 +70,7 @@ public class SplashActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(SplashActivity.this,"YEAH",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SplashActivity.this, "YEAH", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -84,7 +80,6 @@ public class SplashActivity extends Activity {
     public void testTrace() {
         new MyTread().start();
     }
-
 
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)

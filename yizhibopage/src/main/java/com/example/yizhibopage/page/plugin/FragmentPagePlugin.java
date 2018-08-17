@@ -1,17 +1,26 @@
 package com.example.yizhibopage.page.plugin;
 
 
-import android.support.v4.app.Fragment;
-
 import com.example.yizhibopage.page.IPage;
 
 public class FragmentPagePlugin extends SimplePagePlugin {
 
-    Fragment mFragment;
+    private Object mFragment;
 
-    public FragmentPagePlugin(Fragment fragment, IPage page) {
+    /**
+     * @param fragment either {@link android.app.Fragment} or {@link android.support.v4.app.Fragment}
+     * @param page
+     */
+    public FragmentPagePlugin(Object fragment, IPage page) {
         super(page);
-        mFragment = fragment;
+        if (fragment instanceof android.app.Fragment) {
+            mFragment = fragment;
+        } else if (fragment instanceof android.support.v4.app.Fragment) {
+            mFragment = fragment;
+        } else {
+            throw new IllegalArgumentException("Fragment must be either {@link android.app.Fragment} or {@link android.support.v4.app.Fragment}," +
+                    " witch you pass is -> " + fragment);
+        }
     }
 
 }

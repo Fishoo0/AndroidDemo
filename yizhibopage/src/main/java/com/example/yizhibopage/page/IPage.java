@@ -49,11 +49,11 @@ public interface IPage {
         void uninstall();
 
         /**
-         * Setting status
+         * Setting targetStatus
          *
-         * @param status
+         * @param targetStatus
          */
-        void setStatus(int status, boolean align);
+        void setStatus(int targetStatus, boolean align);
 
         /**
          * Getting its page's status.
