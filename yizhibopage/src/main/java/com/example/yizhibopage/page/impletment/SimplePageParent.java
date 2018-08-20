@@ -3,6 +3,7 @@ package com.example.yizhibopage.page.impletment;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -197,11 +198,11 @@ public class SimplePageParent extends SimplePage {
                 final View view = getChildAt(i);
                 if (view instanceof IPage) {
                     final IPage page = (IPage) view;
-                    page.setArgument(getArgument());
                     final long delay = page instanceof SimplePageParent ? mPolicy.getDelay((SimplePageParent) page) : 0;
-                    postDelayed(new Runnable() {
+                    getHandler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
+                            page.setArgument(getArgument());
                             page.getPageManager().install(getPageManager().getContainer(), SimplePageParent.this, getPageManager().getStatus());
                             mPages.add(page);
                         }
@@ -211,6 +212,15 @@ public class SimplePageParent extends SimplePage {
                     Log.d(TAG, "\t pass child view -> " + view);
                 }
             }
+        }
+
+        @Override
+        public void uninstall() {
+            super.uninstall();
+            for (IPage page : mPages) {
+                page.getPageManager().uninstall();
+            }
+            mPages.clear();
         }
     }
 

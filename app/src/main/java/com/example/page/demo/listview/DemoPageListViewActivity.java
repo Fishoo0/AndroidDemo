@@ -1,8 +1,10 @@
 package com.example.page.demo.listview;
 
 import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -62,23 +64,28 @@ public class DemoPageListViewActivity extends Activity {
             return position;
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            ListViewPagePlugin plugin;
+            ListViewPagePlugin plugin = null;
+            DemoPage page;
             if (convertView instanceof ListViewPagePlugin) {
                 plugin = (ListViewPagePlugin) convertView;
-                Bundle bundle = plugin.getPage().getArgument() != null ? plugin.getPage().getArgument() : new Bundle();
-                bundle.putString("url", PlayerPage.URLS[position]);
-                plugin.getPage().setArgument(bundle);
+                page = (DemoPage) plugin.getPage();
             } else {
-                DemoPage page = new DemoPage(DemoPageListViewActivity.this);
+                page = new DemoPage(DemoPageListViewActivity.this);
                 FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 2000);
                 page.setLayoutParams(params);
-                Bundle bundle = new Bundle();
-                bundle.putString("url", PlayerPage.URLS[position]);
-                page.setArgument(bundle);
-                page.install(SimplePageParent.mDefaultPolicy);
-                plugin = new ListViewPagePlugin(mListView.getContext(), page, mScrollListener);
+            }
+
+            Bundle bundle = page.getArgument() != null ? page.getArgument() : new Bundle();
+            bundle.putString("url", PlayerPage.URLS[position]);
+            bundle.putInt("position", position);
+            page.setArgument(bundle);
+            page.install(SimplePageParent.mDefaultPolicy);
+
+            if (plugin == null) {
+                plugin = new ListViewPagePlugin(DemoPageListViewActivity.this, page, mScrollListener);
             }
             return plugin;
         }

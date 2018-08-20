@@ -19,7 +19,7 @@ import com.example.yizhibopage.page.IPage;
 
 public class ListViewPagePlugin extends FrameLayout {
 
-    static final String TAG = ListViewPagePlugin.class.getSimpleName();
+    String TAG;
 
     private IPage mPage;
     private ListViewScrollListener mScrollListener;
@@ -29,6 +29,7 @@ public class ListViewPagePlugin extends FrameLayout {
         mScrollListener = scrollListener;
         mPage = page;
         addView((View) mPage);
+        TAG = this.toString();
     }
 
     public IPage getPage() {
@@ -38,7 +39,7 @@ public class ListViewPagePlugin extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        Log.v(TAG, "onAttachedToWindow");
+        Log.e(TAG, "onAttachedToWindow");
         mPage.onCreate(mPage.getArgument());
         mPage.onCreateView(this);
         mPage.onStart();
@@ -70,18 +71,19 @@ public class ListViewPagePlugin extends FrameLayout {
             visibility = GONE;
         }
 
+        final int status = mPage.getPageManager().getStatus();
         if (visibility == VISIBLE) {
             if (mScrollListener.getCurrentVisibleItem() == this) {
-                if (mPage.getPageManager().getStatus() != IPage.ON_RESUME) {  // protection
+                if (status != IPage.ON_RESUME) {  // protection
                     mPage.onResume();
                 }
             } else {
-                if (mPage.getPageManager().getStatus() != IPage.ON_PAUSE) {  // protection
+                if (status != IPage.ON_PAUSE) {  // protection
                     mPage.onPause();
                 }
             }
         } else {
-            if (mPage.getPageManager().getStatus() != IPage.ON_PAUSE) { // protection
+            if (status != IPage.ON_PAUSE) { // protection
                 mPage.onPause();
             }
         }
@@ -90,14 +92,22 @@ public class ListViewPagePlugin extends FrameLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        Log.v(TAG, "onDetachedFromWindow");
+        Log.w(TAG, "onDetachedFromWindow");
         mPage.onStop();
         mPage.onDestroyView();
         mPage.onDestroy();
+        // uninstall
+        mPage.getPageManager().uninstall();
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "@" + hashCode() + "@" + mPage;
+    }
 
     public static class ListViewScrollListener implements ListView.OnScrollListener {
+
+        public static String TAG = ListViewScrollListener.class.getClass().getSimpleName();
 
         private View mCurrentVisibleItem;
         private ListView mListView;
