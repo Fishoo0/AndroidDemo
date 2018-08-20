@@ -23,7 +23,7 @@ public class DemoPageActivity extends Activity {
         Bundle bundle = new Bundle();
         bundle.putString("url", PlayerPage.URLS[1]);
         page.setArgument(bundle);
-        page.install(SimplePageParent.mDefaultPolicy);
+        page.install(null);
 
         mPagePlugin = new ActivityPagePlugin(this, page);
         mPagePlugin.onCreate(savedInstanceState);

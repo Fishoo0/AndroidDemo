@@ -82,7 +82,7 @@ public class DemoPageListViewActivity extends Activity {
             bundle.putString("url", PlayerPage.URLS[position]);
             bundle.putInt("position", position);
             page.setArgument(bundle);
-            page.install(SimplePageParent.mDefaultPolicy);
+            page.install(null);
 
             if (plugin == null) {
                 plugin = new ListViewPagePlugin(DemoPageListViewActivity.this, page, mScrollListener);

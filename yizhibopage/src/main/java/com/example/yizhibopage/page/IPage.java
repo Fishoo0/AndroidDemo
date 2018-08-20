@@ -43,6 +43,14 @@ public interface IPage {
          */
         void install(Object container, ViewParent viewParent, int targetStatus);
 
+
+        /**
+         * Installed or not
+         *
+         * @return
+         */
+        boolean isInstalled();
+
         /**
          * Uninstall its page
          */

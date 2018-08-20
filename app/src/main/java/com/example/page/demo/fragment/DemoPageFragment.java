@@ -31,7 +31,7 @@ public class DemoPageFragment extends Fragment {
         Bundle bundle = new Bundle();
         bundle.putString("url", PlayerPage.URLS[1]);
         page.setArgument(bundle);
-        page.install(SimplePageParent.mDefaultPolicy);
+        page.install(null);
 
         mPagePlugin = new FragmentPagePlugin(this, page);
         mPagePlugin.onCreate(savedInstanceState);

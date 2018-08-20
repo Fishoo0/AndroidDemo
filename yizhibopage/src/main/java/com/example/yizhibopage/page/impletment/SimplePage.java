@@ -6,7 +6,6 @@ import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -54,7 +53,7 @@ public class SimplePage extends FrameLayout implements IPage {
 
 
     protected IPageManager createPageManager() {
-        return new SimplePageManager(this);
+        return new PageManager(this);
     }
 
 
@@ -138,7 +137,7 @@ public class SimplePage extends FrameLayout implements IPage {
      * 4, others
      */
 
-    public static class SimplePageManager implements IPage.IPageManager {
+    public static class PageManager implements IPage.IPageManager {
 
         final boolean DEBUG = true;
 
@@ -192,7 +191,7 @@ public class SimplePage extends FrameLayout implements IPage {
         }
 
 
-        private IPage mPage;
+        protected IPage mPage;
         private int mCurrentStatus = NONE;
 
         private Object mContainer;
@@ -200,7 +199,7 @@ public class SimplePage extends FrameLayout implements IPage {
         private ViewParent mViewParent;
 
 
-        public SimplePageManager(IPage page) {
+        public PageManager(IPage page) {
             mPage = page;
             TAG = this.toString();
         }
@@ -241,6 +240,11 @@ public class SimplePage extends FrameLayout implements IPage {
             setStatus(targetStatus, true);
         }
 
+        @Override
+        public boolean isInstalled() {
+            return mContext != null;
+        }
+
         /**
          * Remove page
          */
@@ -264,12 +268,10 @@ public class SimplePage extends FrameLayout implements IPage {
         public void setStatus(int targetStatus, boolean align) {
             if (DEBUG)
                 Log.d(TAG, "setStatus -> " + stateToString(targetStatus) + " align -> " + align);
-
             // return
             if (targetStatus == mCurrentStatus) {
                 return;
             }
-
 
             if (mContext == null) {
                 throw new IllegalStateException(mPage + " has not been installed yet, invalid #setStatus status -> " + targetStatus + " align ->  " + align);

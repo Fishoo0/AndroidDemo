@@ -48,7 +48,7 @@ public class DemoPageViewPagerActivity extends FragmentActivity {
             Bundle bundle = new Bundle();
             bundle.putString("url", PlayerPage.URLS[i]);
             page.setArgument(bundle);
-            page.install(SimplePageParent.mDefaultPolicy);
+            page.install(null);
             return page;
         }
 

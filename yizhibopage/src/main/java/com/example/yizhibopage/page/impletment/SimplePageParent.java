@@ -25,8 +25,6 @@ public class SimplePageParent extends SimplePage {
 
     private int mLevel;
 
-    private List<IPage> mPages;
-
     public SimplePageParent(@NonNull Context context) {
         super(context);
     }
@@ -44,69 +42,116 @@ public class SimplePageParent extends SimplePage {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-
     @Override
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
-        for (IPage page : mPages) {
-            page.onCreate(page.getArgument());
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onCreate(page.getArgument());
+                }
+            }
         }
     }
 
     @Override
     public View onCreateView(ViewParent viewParent) {
-        View view = super.onCreateView(viewParent);
-        for (IPage page : mPages) {
-            page.onCreateView(SimplePageParent.this);
+        View v = super.onCreateView(viewParent);
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onCreateView(SimplePageParent.this);
+                }
+            }
         }
-        return view;
+        return v;
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        for (IPage page : mPages) {
-            page.onStart();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onStart();
+                }
+            }
         }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        for (IPage page : mPages) {
-            page.onResume();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onResume();
+                }
+            }
         }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        for (IPage page : mPages) {
-            page.onPause();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onPause();
+                }
+            }
         }
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        for (IPage page : mPages) {
-            page.onStop();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onStop();
+                }
+            }
         }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        for (IPage page : mPages) {
-            page.onDestroyView();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onDestroyView();
+                }
+            }
         }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        for (IPage page : mPages) {
-            page.onDestroy();
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                if (page.getPageManager().isInstalled()) {
+                    page.onDestroy();
+                }
+            }
         }
     }
 
@@ -114,15 +159,18 @@ public class SimplePageParent extends SimplePage {
     public void setArgument(Bundle bundle) {
         super.setArgument(bundle);
         //child need to reset too
-        for (IPage page : mPages) {
-            page.setArgument(bundle);
+        for (int i = 0; i < getChildCount(); i++) {
+            final View view = getChildAt(i);
+            if (view instanceof IPage) {
+                IPage page = (IPage) view;
+                page.setArgument(bundle);
+            }
         }
     }
 
     @Override
     protected void init(Context context, AttributeSet attrs) {
         super.init(context, attrs);
-        mPages = new ArrayList<>();
         int level = 0;
         if (getTag() instanceof String || getTag() instanceof Integer) {
             try {
@@ -139,6 +187,11 @@ public class SimplePageParent extends SimplePage {
     }
 
 
+    @Override
+    protected IPageManager createPageManager() {
+        return new PageManager(this);
+    }
+
     /**
      * Getting current level
      *
@@ -148,40 +201,61 @@ public class SimplePageParent extends SimplePage {
         return mLevel;
     }
 
+
     /**
-     * Policy of loading pages
+     * Simple method.
+     *
+     * @param policy
      */
-    public interface IPolicy {
-
-        long getDelay(SimplePageParent pageLevel);
-    }
-
-    public static IPolicy mDefaultPolicy = new IPolicy() {
-
-        @Override
-        public long getDelay(SimplePageParent pageLevel) {
-            return pageLevel.getLevel() * 1000;
+    public void install(PageManager.IPolicy policy) {
+        if (policy != null) {
+            ((PageManager) getPageManager()).mPolicy = policy;
         }
-    };
-
-    private IPolicy mPolicy = mDefaultPolicy;
-
-    /**
-     * Can only be used by TOP LEVEL IPage
-     */
-    public void install(IPolicy policy) {
-        mPolicy = policy == null ? mDefaultPolicy : policy;
         getPageManager().install(getContext(), null, IPage.NONE);
     }
+
 
     /**
      * Page parent manager
      */
-    private final class PageParentManager extends SimplePageManager {
+    public static class PageManager extends SimplePage.PageManager {
 
-        public PageParentManager(IPage page) {
-            super(page);
+        /**
+         * Policy of loading pages
+         */
+        public interface IPolicy {
+
+            void onPageReady(IPage page, Runnable install);
+
+            void onPageCancel();
         }
+
+        public IPolicy mDefaultPolicy = new IPolicy() {
+
+            Handler handler = new Handler();
+
+            @Override
+            public void onPageReady(IPage page, Runnable install) {
+                final long delay = page instanceof SimplePageParent ? (((SimplePageParent) page).getLevel() * 1000) : 0;
+                handler.postDelayed(install, delay);
+            }
+
+            @Override
+            public void onPageCancel() {
+                handler.removeCallbacksAndMessages(null);
+            }
+        };
+
+        private IPolicy mPolicy = mDefaultPolicy;
+
+
+        private SimplePageParent mSimplePageParent;
+
+        public PageManager(SimplePageParent page) {
+            super(page);
+            mSimplePageParent = page;
+        }
+
 
         @Override
         public void install(Object container, ViewParent viewParent, int targetStatus) {
@@ -193,21 +267,18 @@ public class SimplePageParent extends SimplePage {
          * Install children
          */
         private void installChildren() {
-            mPages.clear();
-            for (int i = 0; i < getChildCount(); i++) {
-                final View view = getChildAt(i);
+            for (int i = 0; i < mSimplePageParent.getChildCount(); i++) {
+                final View view = mSimplePageParent.getChildAt(i);
                 if (view instanceof IPage) {
                     final IPage page = (IPage) view;
-                    final long delay = page instanceof SimplePageParent ? mPolicy.getDelay((SimplePageParent) page) : 0;
-                    getHandler().postDelayed(new Runnable() {
+                    Runnable installation = new Runnable() {
                         @Override
                         public void run() {
-                            page.setArgument(getArgument());
-                            page.getPageManager().install(getPageManager().getContainer(), SimplePageParent.this, getPageManager().getStatus());
-                            mPages.add(page);
+                            page.getPageManager().install(getContainer(), mSimplePageParent, getStatus());
                         }
-                    }, delay);
-                    Log.d(TAG, "\t install child view -> " + view + ", and scheduled for showing in " + delay + " milliseconds.");
+                    };
+                    mPolicy.onPageReady(page, installation);
+                    Log.d(TAG, "\t install child view -> " + view + ", and scheduled to IPolicy -> " + mPolicy);
                 } else {
                     Log.d(TAG, "\t pass child view -> " + view);
                 }
@@ -217,16 +288,19 @@ public class SimplePageParent extends SimplePage {
         @Override
         public void uninstall() {
             super.uninstall();
-            for (IPage page : mPages) {
-                page.getPageManager().uninstall();
+            for (int i = 0; i < mSimplePageParent.getChildCount(); i++) {
+                final View view = mSimplePageParent.getChildAt(i);
+                if (view instanceof IPage) {
+                    IPage page = (IPage) view;
+                    if (page.getPageManager().isInstalled()) {
+                        page.getPageManager().uninstall();
+                    }
+                }
             }
-            mPages.clear();
+            if (mPolicy != null) {
+                mPolicy.onPageCancel();
+            }
         }
-    }
-
-    @Override
-    protected IPageManager createPageManager() {
-        return new PageParentManager(this);
     }
 
 }
