@@ -1,18 +1,19 @@
-package com.example.page.demo.fragment;
+package com.example;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.Nullable;
 
 import com.example.fishyu.fishdemo.R;
 
-public class DemoPageFragmentActivity extends Activity {
+public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.fragment_activity_layout);
+
+
+        setContentView(R.layout.activity_main);
     }
-
-
 }

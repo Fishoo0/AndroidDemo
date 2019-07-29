@@ -1,21 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.example.view.SwipeAdjustSizeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.example.view.viewpager.endless.EndlessViewPager
-        android:id="@+id/viewpager"
+
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
 
 
-    <com.example.view.complete.FitPercentImageView
-        android:id="@+id/imageview"
-        android:layout_width="wrap_content"
-        android:layout_height="30dp"
-        android:background="#938492"
-        android:scaleType="fitStart"
-        android:src="@drawable/w_yueliang"
-        android:visibility="visible" />
+        <FrameLayout
+            android:id="@+id/left"
+            android:layout_width="100dp"
+            android:tag="swipeLeftParent"
+            android:layout_height="match_parent"
+            android:background="@android:color/holo_red_dark">
 
-</RelativeLayout>
+
+            <view class="com.example.view.SwipeAdjustSizeLayout$SwipeButton"
+
+                android:id="@+id/left_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:tag="swipeLeft"
+                android:layout_gravity="right|center_vertical"
+                android:background="@android:color/black"
+
+                />
+
+        </FrameLayout>
+
+
+        <FrameLayout
+            android:id="@+id/right"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true"
+            android:background="@android:color/holo_green_dark">
+
+
+            <ImageView
+
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="left|center_vertical"
+                android:background="@android:color/black"
+
+                />
+
+        </FrameLayout>
+
+
+        <FrameLayout
+            android:id="@+id/center"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toLeftOf="@id/right"
+            android:layout_toRightOf="@+id/left"
+            android:background="@android:color/holo_orange_light">
+
+
+        </FrameLayout>
+    </RelativeLayout>
+
+
+</com.example.view.SwipeAdjustSizeLayout>
