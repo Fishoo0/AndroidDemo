@@ -1,5 +1,6 @@
 package com.example.view;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
@@ -11,8 +12,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,7 +40,7 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
 
     private final Map<String, AViewAdjuster> mSupportSwipe = new HashMap();
 
-    TouchManager mTouchManager;
+    AViewAdjuster mTouchManager;
 
     View mSwipeIcon[];
     private ViewGroup mSwipeLayouts[];
@@ -50,95 +51,232 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
      * Adjuster.
      */
     abstract static class AViewAdjuster {
-
-        ViewGroup resizeView;
-        int originalWidth;
-        int originalHeight;
+        ViewGroup toAdjustView;
+        View swipeView;
 
         float downX;
         float downY;
 
-        Handler handler;
+        InternalHandler handler;
 
-
+        /**
+         * Scroll Event Handler
+         */
         private class InternalHandler extends Handler {
 
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
-                onAdjust((int) downX, (int) downY, msg.arg1, msg.arg2);
+                AViewAdjuster.this.handleMessage(msg);
             }
         }
 
-        AViewAdjuster() {
+
+        protected void handleMessage(Message msg) {
+
+        }
+
+
+        public AViewAdjuster() {
             handler = new InternalHandler();
         }
 
-        public void init(ViewGroup view, MotionEvent downEvent) {
-            resizeView = view;
+
+        public void init(ViewGroup parent, View swipeView, MotionEvent downEvent) {
+            this.swipeView = swipeView;
+            this.toAdjustView = parent;
             downX = downEvent.getX();
             downY = downEvent.getY();
-            originalWidth = view.getLayoutParams().width;
-            originalHeight = view.getLayoutParams().height;
         }
 
+
         /**
-         * Adjust the view.
+         * Scroll the view
+         *
+         * @param event1
+         * @param event2
+         * @param arg1
+         * @param arg2
+         */
+        public boolean scroll(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            // do nothing ...
+//            int x = (int) event2.getX();
+//            int y = (int) event2.getY();
+//            handler.removeCallbacksAndMessages(null);
+//            handler.sendMessage(handler.obtainMessage(0, x, y));
+//            return true;
+
+            return false;
+        }
+
+
+        /**
+         * Click
          *
          * @param event
          */
-        public void adjust(MotionEvent event) {
-            int x = (int) event.getX();
-            int y = (int) event.getY();
-            handler.removeCallbacksAndMessages(null);
-            handler.sendMessage(handler.obtainMessage(0, x, y));
-        }
-
-
-        private void adjustMove(MotionEvent event) {
-
-        }
-
-
-        private void adjustFling(MotionEvent event) {
-
-        }
-
-        private void adjustClick(MotionEvent event) {
-
-        }
-
+        public abstract boolean click(MotionEvent event);
 
         /**
-         * Implement your own logic to view adjusting.
+         * Fling
          *
-         * @param downX
-         * @param downY
+         * @param event1
+         * @param event2
+         * @param arg1
+         * @param arg2
          */
-        abstract void onAdjust(int downX, int downY, int x, int y);
+        public boolean fling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (fling(event1, event2)) {
+                return click(event1);
+            }
+            return false;
+        }
+
+
+        protected boolean fling(MotionEvent event1, MotionEvent event2) {
+            return true;
+        }
 
     }
 
 
     static class LeftSwipeAdjuster extends AViewAdjuster {
+        int lastSize;
+        int minSize;
+
+        Rect originalRect;
+
+        private ObjectAnimator animator;
+
 
         @Override
-        public void init(ViewGroup view, MotionEvent downEvent) {
-            super.init(view, downEvent);
+        public void init(ViewGroup parent, View swipeView, MotionEvent downEvent) {
+            super.init(parent, swipeView, downEvent);
+            // init the view
+            if (originalRect == null) {
+                originalRect = new Rect();
+                parent.getGlobalVisibleRect(originalRect);
+            }
+            lastSize = parent.getLayoutParams().width;
+            minSize = swipeView.getWidth();
         }
 
-        @Override
-        void onAdjust(int downX, int downY, int x, int y) {
-            int delta = x - downX;
 
-            // resize
-            ViewGroup.LayoutParams params = resizeView.getLayoutParams();
-            params.width = originalWidth + delta;
-            resizeView.setLayoutParams(params);
+        @Override
+        public boolean click(MotionEvent event) {
+            if (animator != null && animator.isRunning()) {
+                return false;
+            }
+            float start = lastSize;
+            float end = endSize(event);
+
+            // start animator
+            ObjectAnimator animator = ObjectAnimator.ofFloat(this, "size", start, end);
+            animator.setDuration(200);
+            animator.setInterpolator(new DecelerateInterpolator());
+            animator.start();
+            this.animator = animator;
+
+            return true;
+        }
+
+
+        protected float endSize(MotionEvent event) {
+            if (event.getRawX() > originalRect.centerX()) {
+                return minSize;
+            } else {
+                return originalRect.width();
+            }
+        }
+
+
+        /**
+         * Set width
+         *
+         * @param size
+         */
+        @SuppressWarnings("unused")
+        public void setSize(float size) {
+            ViewGroup.LayoutParams params = toAdjustView.getLayoutParams();
+            params.width = (int) size;
+            toAdjustView.setLayoutParams(params);
+        }
+
+
+        @Override
+        protected boolean fling(MotionEvent event1, MotionEvent event2) {
+            if (event1.getRawX() > originalRect.centerX() && event1.getRawX() > event2.getRawX()) {
+                return true;
+            } else if (event1.getRawX() < originalRect.centerX() && event1.getRawX() < event2.getRawX()) {
+                return true;
+            }
+            return false;
         }
     }
 
 
+    static class RightSwipeAdjuster extends LeftSwipeAdjuster {
+
+
+        protected float endSize(MotionEvent event) {
+            if (event.getRawX() < originalRect.centerX()) {
+                return minSize;
+            } else {
+                return originalRect.width();
+            }
+        }
+
+    }
+
+
+    static class TopSwipeAdjuster extends LeftSwipeAdjuster {
+
+        @Override
+        public void init(ViewGroup parent, View swipeView, MotionEvent downEvent) {
+            super.init(parent, swipeView, downEvent);
+            lastSize = parent.getLayoutParams().height;
+            minSize = swipeView.getHeight();
+        }
+
+        @Override
+        protected float endSize(MotionEvent event) {
+            if (event.getRawY() > originalRect.centerY()) {
+                return minSize;
+            } else {
+                return originalRect.height();
+            }
+        }
+
+        @Override
+        public void setSize(float size) {
+            ViewGroup.LayoutParams params = toAdjustView.getLayoutParams();
+            params.height = (int) size;
+            toAdjustView.setLayoutParams(params);
+        }
+
+        @Override
+        protected boolean fling(MotionEvent event1, MotionEvent event2) {
+            if (event1.getRawY() > originalRect.centerY() && event1.getRawY() > event2.getRawY()) {
+                return true;
+            } else if (event1.getRawY() < originalRect.centerY() && event1.getRawY() < event2.getRawY()) {
+                return true;
+            }
+            return false;
+        }
+    }
+
+
+    static class BottomSwipeAdjuster extends TopSwipeAdjuster {
+
+        @Override
+        protected float endSize(MotionEvent event) {
+            if (event.getRawY() < originalRect.centerY()) {
+                return minSize;
+            } else {
+                return originalRect.height();
+            }
+        }
+    }
 
 
     public SwipeAdjustSizeLayout(@NonNull Context context, @Nullable AttributeSet attrs) {
@@ -146,14 +284,13 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
         init();
     }
 
+
     protected void init() {
         mGestureDetector = new GestureDetector(getContext(), this);
-
-
         mSupportSwipe.put(VIEW_TAG_LEFT_SWIPE, new LeftSwipeAdjuster());
-//        mSupportSwipe.put(VIEW_TAG_RIGHT_SWIPE, new RightSwipeAdjuster());
-//        mSupportSwipe.put(VIEW_TAG_TOP_SWIPE, new TopSwipeAdjuster());
-//        mSupportSwipe.put(VIEW_TAG_BOTTOM_SWIPE, new BottomSwipeAdjuster());
+        mSupportSwipe.put(VIEW_TAG_RIGHT_SWIPE, new RightSwipeAdjuster());
+        mSupportSwipe.put(VIEW_TAG_TOP_SWIPE, new TopSwipeAdjuster());
+        mSupportSwipe.put(VIEW_TAG_BOTTOM_SWIPE, new BottomSwipeAdjuster());
     }
 
     /**
@@ -179,16 +316,13 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
         List<ViewParent> parents = new ArrayList<>();
         for (String key : mSupportSwipe.keySet()) {
             View view = findViewWithTag(key);
-            if (view instanceof SwipeButton) {
-                ((SwipeButton) view).mAdjustLayout = this;
+            if (view != null) {
                 views.add(view);
                 ViewParent viewParent = findViewWithTag(key + VIEW_TAG_SWIPE_PARENT);
                 if (viewParent == null) {
-                    throw new RuntimeException("You must specify the parent of view[" + key + "]");
+                    throw new RuntimeException("You must specify the toAdjustView of view[" + key + "]");
                 }
                 parents.add(viewParent);
-            } else if (view != null) {
-                throw new RuntimeException("The swipe button must be an instance of SwipeButton.");
             }
         }
         // set views ...
@@ -197,95 +331,47 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
         }
     }
 
-
     /**
-     * Touch Event Data.
+     * Active this event.
+     *
+     * @param downEvent
+     * @return
      */
-    public class TouchManager {
-        float x;
-        float y;
-
-        View swipeIcon;
-        ViewGroup swipeIconParent;
-
+    public AViewAdjuster getAdjuster(MotionEvent downEvent) {
         AViewAdjuster viewAdjuster;
-
-        public TouchManager() {
+        Rect rect = new Rect();
+        if (mSwipeIcon == null) {
+            return null;
         }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return "x:" + x + ",y:" + y;
-        }
-
-        /**
-         * Active this event.
-         *
-         * @param downEvent
-         * @return
-         */
-        protected boolean active(MotionEvent downEvent) {
-            x = downEvent.getX();
-            y = downEvent.getY();
-
-            Rect rect = new Rect();
-            if (mSwipeIcon == null) {
-                return false;
+        for (int i = 0; i < mSwipeIcon.length; i++) {
+            View view = mSwipeIcon[i];
+            getGlobalVisibleRect(rect);
+            int dy = rect.top;
+            view.getGlobalVisibleRect(rect);
+            rect.offset(0, -dy);
+            rect.inset(-20, -20);
+            if (rect.contains((int) downEvent.getX(), (int) downEvent.getY())) {
+                viewAdjuster = mSupportSwipe.get(view.getTag());
+                viewAdjuster.init(mSwipeLayouts[i], view, downEvent);
+                return viewAdjuster;
             }
-            for (int i = 0; i < mSwipeIcon.length; i++) {
-                View view = mSwipeIcon[i];
-
-                getGlobalVisibleRect(rect);
-                int dy = rect.top;
-                view.getGlobalVisibleRect(rect);
-                rect.offset(0, -dy);
-
-                if (rect.contains((int) x, (int) y)) {
-                    swipeIcon = view;
-                    swipeIconParent = mSwipeLayouts[i];
-                    viewAdjuster = mSupportSwipe.get(view.getTag());
-                    viewAdjuster.init(swipeIconParent, downEvent);
-                    return true;
-                }
-            }
-            return false;
         }
-
+        return null;
     }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         Log.v(TAG, "onTouchEvent -> " + event);
-//        switch (event.getAction()) {
-//            case MotionEvent.ACTION_DOWN:
-//                Log.v(TAG, "ACTION_DOWN");
-//
-//
-//            case MotionEvent.ACTION_MOVE:
-//                Log.v(TAG, "ACTION_MOVE");
-//                if (mTouchManager != null) {
-//                    mTouchManager.adjust(event);
-//                    return true;
-//                }
-//                break;
-//
-//            case MotionEvent.ACTION_UP:
-//                Log.v(TAG, "ACTION_UP");
-//                break;
-//
-//            case MotionEvent.ACTION_CANCEL:
-//                Log.v(TAG, "ACTION_CANCEL");
-//                break;
-//
-//            case MotionEvent.ACTION_OUTSIDE:
-//                Log.v(TAG, "ACTION_OUTSIDE");
-//                break;
-//        }
-
         if (mGestureDetector.onTouchEvent(event)) {
             return true;
+        }
+        // action up
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (mTouchManager != null) {
+                mTouchManager = null;
+                return true;
+            }
         }
         return super.onTouchEvent(event);
     }
@@ -293,8 +379,8 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
 
     @Override
     public boolean onDown(MotionEvent e) {
-        mTouchManager = new TouchManager();
-        if (mTouchManager.active(e)) {
+        mTouchManager = getAdjuster(e);
+        if (mTouchManager != null) {
             return true;
         } else {
             mTouchManager = null;
@@ -309,14 +395,21 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
 
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
-        mTouchManager.viewAdjuster.adjustClick(e);
-        return true;
+        if (mTouchManager != null) {
+            mTouchManager.click(e);
+            return true;
+        }
+
+        return false;
     }
 
     @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        mTouchManager.viewAdjuster.adjustMove(e2);
-        return true;
+        if (mTouchManager != null) {
+            mTouchManager.scroll(e1, e2, distanceX, distanceY);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -326,28 +419,11 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
 
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        mTouchManager.viewAdjuster.adjustFling(e2);
-        return true;
+        if (mTouchManager != null) {
+            mTouchManager.fling(e1, e2, velocityX, velocityY);
+            return true;
+        }
+        return false;
     }
 
-
-    public static class SwipeButton extends ImageView {
-
-        SwipeAdjustSizeLayout mAdjustLayout;
-
-        public SwipeButton(Context context, @Nullable AttributeSet attrs) {
-            super(context, attrs);
-        }
-
-        public SwipeButton(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-            super(context, attrs, defStyleAttr);
-        }
-
-
-        @Override
-        public boolean onTouchEvent(MotionEvent event) {
-            Log.v(TAG, "onTouchEvent -> " + event);
-            return super.onTouchEvent(event);
-        }
-    }
 }

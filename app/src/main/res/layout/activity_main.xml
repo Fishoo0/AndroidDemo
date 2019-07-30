@@ -8,59 +8,89 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-
         <FrameLayout
             android:id="@+id/left"
             android:layout_width="100dp"
-            android:tag="swipeLeftParent"
             android:layout_height="match_parent"
-            android:background="@android:color/holo_red_dark">
+            android:background="@android:color/holo_red_dark"
+            android:tag="swipeLeftParent">
 
 
-            <view class="com.example.view.SwipeAdjustSizeLayout$SwipeButton"
+            <ImageView
 
                 android:id="@+id/left_button"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:tag="swipeLeft"
                 android:layout_gravity="right|center_vertical"
                 android:background="@android:color/black"
+                android:tag="swipeLeft"
 
                 />
 
         </FrameLayout>
-
 
         <FrameLayout
             android:id="@+id/right"
             android:layout_width="100dp"
             android:layout_height="match_parent"
             android:layout_alignParentRight="true"
-            android:background="@android:color/holo_green_dark">
-
+            android:background="@android:color/holo_red_dark"
+            android:tag="swipeRightParent">
 
             <ImageView
-
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="left|center_vertical"
                 android:background="@android:color/black"
-
-                />
+                android:tag="swipeRight" />
 
         </FrameLayout>
 
 
-        <FrameLayout
+        <RelativeLayout
             android:id="@+id/center"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_toLeftOf="@id/right"
+            android:layout_toLeftOf="@+id/right"
             android:layout_toRightOf="@+id/left"
-            android:background="@android:color/holo_orange_light">
+            android:background="@android:color/holo_purple">
+
+            <FrameLayout
+                android:id="@+id/top"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:background="@android:color/holo_green_dark"
+                android:tag="swipeTopParent">
+
+                <ImageView
+                    android:id="@+id/top_button"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:background="@android:color/black"
+                    android:tag="swipeTop" />
+
+            </FrameLayout>
 
 
-        </FrameLayout>
+            <FrameLayout
+                android:id="@+id/bottom"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_alignParentBottom="true"
+                android:background="@android:color/holo_green_dark"
+                android:tag="swipeBottomParent">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="top|center_horizontal"
+                    android:background="@android:color/black"
+                    android:tag="swipeBottom" />
+
+            </FrameLayout>
+
+        </RelativeLayout>
     </RelativeLayout>
 
 
