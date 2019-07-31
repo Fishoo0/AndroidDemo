@@ -46,11 +46,26 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
     private ViewGroup mSwipeLayouts[];
     GestureDetector mGestureDetector;
 
+    private Rect temp = new Rect();
+
+    /**
+     * Getting
+     *
+     * @param view
+     * @return
+     */
+    public final Rect getVisibleRect(View view) {
+        getGlobalVisibleRect(temp);
+        int dy = temp.top;
+        view.getGlobalVisibleRect(temp);
+        temp.offset(0, -dy);
+        return temp;
+    }
 
     /**
      * Adjuster.
      */
-    abstract static class AViewAdjuster {
+    abstract class AViewAdjuster {
         ViewGroup toAdjustView;
         View swipeView;
 
@@ -58,6 +73,9 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
         float downY;
 
         InternalHandler handler;
+
+        Rect rect = new Rect();
+
 
         /**
          * Scroll Event Handler
@@ -89,9 +107,14 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
             downY = downEvent.getY();
         }
 
-
         /**
          * Scroll the view
+         * <p>
+         * //            int x = (int) event2.getX();
+         * //            int y = (int) event2.getY();
+         * //            handler.removeCallbacksAndMessages(null);
+         * //            handler.sendMessage(handler.obtainMessage(0, x, y));
+         * //            return true;
          *
          * @param event1
          * @param event2
@@ -99,13 +122,6 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
          * @param arg2
          */
         public boolean scroll(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
-            // do nothing ...
-//            int x = (int) event2.getX();
-//            int y = (int) event2.getY();
-//            handler.removeCallbacksAndMessages(null);
-//            handler.sendMessage(handler.obtainMessage(0, x, y));
-//            return true;
-
             return false;
         }
 
@@ -115,7 +131,30 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
          *
          * @param event
          */
-        public abstract boolean click(MotionEvent event);
+        public final boolean click(MotionEvent event) {
+            if (isClick()) {
+                return onClick(event);
+            }
+            return false;
+        }
+
+        public abstract boolean onClick(MotionEvent event);
+
+        /**
+         * @return
+         */
+        public boolean isClick() {
+            Rect rect = new Rect();
+            getGlobalVisibleRect(rect);
+            int dy = rect.top;
+            swipeView.getGlobalVisibleRect(rect);
+            rect.offset(0, -dy);
+            rect.inset(-20, -20);
+            if (rect.contains((int) downX, (int) downY)) {
+                return true;
+            }
+            return false;
+        }
 
         /**
          * Fling
@@ -125,24 +164,38 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
          * @param arg1
          * @param arg2
          */
-        public boolean fling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
-            if (fling(event1, event2)) {
-                return click(event1);
+        public final boolean fling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (isFling(event1, event2, arg1, arg2)) {
+                return onFling(event1, event2, arg1, arg2);
             }
             return false;
         }
 
 
-        protected boolean fling(MotionEvent event1, MotionEvent event2) {
-            return true;
+        protected boolean isFling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (Math.abs(event2.getRawX() - mTouchManager.downX) / Math.abs(event2.getRawY() - mTouchManager.downY) > 1) {
+//
+//                getGlobalVisibleRect(rect);
+//                int dy = rect.top;
+//                toAdjustView.getGlobalVisibleRect(rect);
+//                rect.offset(0, -dy);
+//                rect.inset(-20, -20);
+//                if (rect.contains((int) downX, (int) downY)) {
+//                    return true;
+//                }
+                return true;
+            }
+            return false;
         }
 
+        protected abstract boolean onFling(MotionEvent event1, MotionEvent event2, float arg1, float arg2);
     }
 
 
-    static class LeftSwipeAdjuster extends AViewAdjuster {
+    class LeftSwipeAdjuster extends AViewAdjuster {
         int lastSize;
         int minSize;
+        int originalSize;
 
         Rect originalRect;
 
@@ -159,16 +212,37 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
             }
             lastSize = parent.getLayoutParams().width;
             minSize = swipeView.getWidth();
+            originalSize = originalRect.width();
         }
 
-
-        @Override
-        public boolean click(MotionEvent event) {
+        /**
+         * Close the
+         *
+         * @return
+         */
+        public boolean close() {
             if (animator != null && animator.isRunning()) {
                 return false;
             }
             float start = lastSize;
-            float end = endSize(event);
+            float end = minSize;
+            // start animator
+            ObjectAnimator animator = ObjectAnimator.ofFloat(this, "size", start, end);
+            animator.setDuration(200);
+            animator.setInterpolator(new DecelerateInterpolator());
+            animator.start();
+            this.animator = animator;
+            return true;
+        }
+
+
+        public boolean open() {
+            if (animator != null && animator.isRunning()) {
+                return false;
+            }
+
+            float start = lastSize;
+            float end = originalSize;
 
             // start animator
             ObjectAnimator animator = ObjectAnimator.ofFloat(this, "size", start, end);
@@ -176,19 +250,26 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
             animator.setInterpolator(new DecelerateInterpolator());
             animator.start();
             this.animator = animator;
-
             return true;
         }
 
-
-        protected float endSize(MotionEvent event) {
+        @Override
+        public boolean onClick(MotionEvent event) {
             if (event.getRawX() > originalRect.centerX()) {
-                return minSize;
+                return close();
             } else {
-                return originalRect.width();
+                return open();
             }
         }
 
+        @Override
+        protected boolean onFling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (event2.getRawX() < event1.getRawX()) {
+                return close();
+            } else {
+                return open();
+            }
+        }
 
         /**
          * Set width
@@ -202,50 +283,60 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
             toAdjustView.setLayoutParams(params);
         }
 
+    }
+
+
+    class RightSwipeAdjuster extends LeftSwipeAdjuster {
 
         @Override
-        protected boolean fling(MotionEvent event1, MotionEvent event2) {
-            if (event1.getRawX() > originalRect.centerX() && event1.getRawX() > event2.getRawX()) {
-                return true;
-            } else if (event1.getRawX() < originalRect.centerX() && event1.getRawX() < event2.getRawX()) {
-                return true;
-            }
-            return false;
-        }
-    }
-
-
-    static class RightSwipeAdjuster extends LeftSwipeAdjuster {
-
-
-        protected float endSize(MotionEvent event) {
+        public boolean onClick(MotionEvent event) {
             if (event.getRawX() < originalRect.centerX()) {
-                return minSize;
+                return close();
             } else {
-                return originalRect.width();
+                return open();
             }
         }
 
+        @Override
+        protected boolean onFling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (event2.getRawX() > event1.getRawX()) {
+                return close();
+            } else {
+                return open();
+            }
+        }
     }
 
 
-    static class TopSwipeAdjuster extends LeftSwipeAdjuster {
+    class TopSwipeAdjuster extends LeftSwipeAdjuster {
 
         @Override
         public void init(ViewGroup parent, View swipeView, MotionEvent downEvent) {
             super.init(parent, swipeView, downEvent);
             lastSize = parent.getLayoutParams().height;
             minSize = swipeView.getHeight();
+            originalSize = originalRect.height();
         }
 
         @Override
-        protected float endSize(MotionEvent event) {
+        public boolean onClick(MotionEvent event) {
             if (event.getRawY() > originalRect.centerY()) {
-                return minSize;
+                return close();
             } else {
-                return originalRect.height();
+                return open();
             }
         }
+
+
+        @Override
+        protected boolean onFling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (event2.getRawY() < event1.getRawY()) {
+                return close();
+            } else {
+                return open();
+            }
+        }
+
 
         @Override
         public void setSize(float size) {
@@ -254,26 +345,26 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
             toAdjustView.setLayoutParams(params);
         }
 
-        @Override
-        protected boolean fling(MotionEvent event1, MotionEvent event2) {
-            if (event1.getRawY() > originalRect.centerY() && event1.getRawY() > event2.getRawY()) {
-                return true;
-            } else if (event1.getRawY() < originalRect.centerY() && event1.getRawY() < event2.getRawY()) {
-                return true;
-            }
-            return false;
-        }
     }
 
 
-    static class BottomSwipeAdjuster extends TopSwipeAdjuster {
+    class BottomSwipeAdjuster extends TopSwipeAdjuster {
 
         @Override
-        protected float endSize(MotionEvent event) {
+        public boolean onClick(MotionEvent event) {
             if (event.getRawY() < originalRect.centerY()) {
-                return minSize;
+                return close();
             } else {
-                return originalRect.height();
+                return open();
+            }
+        }
+
+        @Override
+        protected boolean onFling(MotionEvent event1, MotionEvent event2, float arg1, float arg2) {
+            if (event2.getRawY() > event1.getRawY()) {
+                return close();
+            } else {
+                return open();
             }
         }
     }
@@ -345,9 +436,10 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
         }
         for (int i = 0; i < mSwipeIcon.length; i++) {
             View view = mSwipeIcon[i];
+            ViewGroup viewParent = mSwipeLayouts[i];
             getGlobalVisibleRect(rect);
             int dy = rect.top;
-            view.getGlobalVisibleRect(rect);
+            viewParent.getGlobalVisibleRect(rect);
             rect.offset(0, -dy);
             rect.inset(-20, -20);
             if (rect.contains((int) downEvent.getX(), (int) downEvent.getY())) {
@@ -361,11 +453,36 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
 
 
     @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        mGestureDetector.onTouchEvent(ev);
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                break;
+
+            case MotionEvent.ACTION_MOVE:
+                if (mTouchManager != null) {
+                    if (mTouchManager.isFling(null, ev, 0, 0)) {
+                        return true;
+                    }
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                // action up
+                if (mTouchManager != null) {
+                    mTouchManager = null;
+                }
+                break;
+        }
+
+        return super.onInterceptTouchEvent(ev);
+    }
+
+    @Override
     public boolean onTouchEvent(MotionEvent event) {
-        Log.v(TAG, "onTouchEvent -> " + event);
         if (mGestureDetector.onTouchEvent(event)) {
             return true;
         }
+
         // action up
         if (event.getAction() == MotionEvent.ACTION_UP) {
             if (mTouchManager != null) {
@@ -396,18 +513,15 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
     @Override
     public boolean onSingleTapUp(MotionEvent e) {
         if (mTouchManager != null) {
-            mTouchManager.click(e);
-            return true;
+            return mTouchManager.click(e);
         }
-
         return false;
     }
 
     @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (mTouchManager != null) {
-            mTouchManager.scroll(e1, e2, distanceX, distanceY);
-            return true;
+            return mTouchManager.scroll(e1, e2, distanceX, distanceY);
         }
         return false;
     }
@@ -420,8 +534,7 @@ public class SwipeAdjustSizeLayout extends FrameLayout implements GestureDetecto
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
         if (mTouchManager != null) {
-            mTouchManager.fling(e1, e2, velocityX, velocityY);
-            return true;
+            return mTouchManager.fling(e1, e2, velocityX, velocityY);
         }
         return false;
     }
