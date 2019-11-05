@@ -3,9 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Fish-DemoAndroid.iml" filepath="$PROJECT_DIR$/Fish-DemoAndroid.iml" />
-      <module fileurl="file://$PROJECT_DIR$/FishDemo.iml" filepath="$PROJECT_DIR$/FishDemo.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/yizhibopage/yizhibopage.iml" filepath="$PROJECT_DIR$/yizhibopage/yizhibopage.iml" />
     </modules>
   </component>
 </project>
