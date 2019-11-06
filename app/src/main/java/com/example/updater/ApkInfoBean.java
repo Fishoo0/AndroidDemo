@@ -19,6 +19,8 @@ final class ApkInfoBean {
     public String versionName = "";
     public long versionCode = 0;
     public String downloadUrl = "";
+    public String description = "";
+    public boolean forceUpdate = false;
 
     /**
      * Bigger than info ??
@@ -66,6 +68,8 @@ final class ApkInfoBean {
             data.versionName = jsonObject.getString("versionName");
             data.versionCode = jsonObject.getLong("versionCode");
             data.downloadUrl = jsonObject.getString("downloadUrl");
+            data.description = jsonObject.getString("description");
+            data.forceUpdate = jsonObject.getBoolean("forceUpdate");
         } catch (JSONException e) {
             e.printStackTrace();
         }

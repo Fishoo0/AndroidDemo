@@ -2,6 +2,7 @@ package com.example.updater;
 
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
@@ -21,7 +22,7 @@ public class ApplicationUpdater {
 
     public Activity mActivity;
 
-    private ApkInfoBean mAPkInfo = ApkInfoBean.EMPTY;
+    private ApkInfoBean mApkInfo = ApkInfoBean.EMPTY;
 
     private ApkUpdateModel mModel;
 
@@ -31,7 +32,7 @@ public class ApplicationUpdater {
         try {
             PackageManager manager = mActivity.getPackageManager();
             PackageInfo info = manager.getPackageInfo(mActivity.getPackageName(), 0);
-            mAPkInfo = ApkInfoBean.fromPackageInfo(info);
+            mApkInfo = ApkInfoBean.fromPackageInfo(info);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -44,26 +45,51 @@ public class ApplicationUpdater {
     public void checkNewVersion() {
         mModel.checkNewVersion(new ApkUpdateModel.ICallback() {
             @Override
-            public void onData(ApkInfoBean info) {
+            public void onData(final ApkInfoBean info) {
                 Log.v(TAG, "onData -> " + info);
-                if (info.bigger(mAPkInfo)) {
-                    Log.e(TAG, "found new version, start download file ...");
-                    File file = HttpUrlSimpleImpl.getNewFile(mActivity, info.downloadUrl);
-                    HttpUrlSimpleImpl.downloadFileAsyn(info.downloadUrl, file, new HttpUrlSimpleImpl.ICallback() {
-                        @Override
-                        public void onProgress(int progress, int total) {
-                            Log.v(TAG, "onProgress -> " + progress + " total -> " + total);
-                        }
+                if (info.bigger(mApkInfo)) {
 
+                    UpdateConfirmDialog.showDialog(mActivity, info, new DialogInterface.OnClickListener() {
                         @Override
-                        public void onFinish(File file) {
-                            Log.e(TAG, "onFinish");
-                            InstallApkCompat.install(mActivity, file);
-                        }
+                        public void onClick(DialogInterface dialog, int which) {
+                            Log.e(TAG, "found new version, start download file ...");
+                            File file = HttpUrlSimpleImpl.getNewFile(mActivity, info.downloadUrl);
+                            boolean useDownloader = false;
+                            if (useDownloader) {
+                                DownloadManagerTool.newInstance(mActivity).downloadAPK(info.downloadUrl, file, new DownloadManagerTool.ICallback() {
+                                    @Override
+                                    public void onProgress(int progress, int total) {
+                                    }
 
-                        @Override
-                        public void onError(Throwable t) {
+                                    @Override
+                                    public void onFinish(File file) {
+                                        InstallApkCompat.install(mActivity, file);
+                                    }
 
+                                    @Override
+                                    public void onError(Throwable t) {
+
+                                    }
+                                });
+                            } else {
+                                HttpUrlSimpleImpl.downloadFileAsyn(info.downloadUrl, file, new HttpUrlSimpleImpl.ICallback() {
+                                    @Override
+                                    public void onProgress(int progress, int total) {
+                                        Log.v(TAG, "onProgress -> " + progress + " total -> " + total);
+                                    }
+
+                                    @Override
+                                    public void onFinish(File file) {
+                                        Log.e(TAG, "onFinish");
+                                        InstallApkCompat.install(mActivity, file);
+                                    }
+
+                                    @Override
+                                    public void onError(Throwable t) {
+
+                                    }
+                                });
+                            }
                         }
                     });
                 } else {

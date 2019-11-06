@@ -1,6 +1,7 @@
 package com.example.updater;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -18,8 +19,6 @@ import java.io.File;
  * App compat
  */
 public class InstallApkCompat {
-
-    private static final String FileProviderConstant = "fileprovider";
 
     public static int REQUEST_CODE = 278;
 
@@ -58,7 +57,7 @@ public class InstallApkCompat {
      */
     private static void startInstallN(Activity context, File file) {
         //参数1 上下文, 参数2 在AndroidManifest中的android:authorities值, 参数3  共享的文件
-        Uri apkUri = FileProvider.getUriForFile(context, FileProviderConstant, file);
+        Uri apkUri = forUri(context, file);
         Intent install = new Intent(Intent.ACTION_VIEW);
         //由于没有在Activity环境下启动Activity,设置下面的标签
         install.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -82,7 +81,7 @@ public class InstallApkCompat {
 
 
     public static boolean checkInstall0Permission(final Activity context) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             boolean isGranted = context.getPackageManager().canRequestPackageInstalls();
             if (!isGranted) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
@@ -110,7 +109,7 @@ public class InstallApkCompat {
      */
     public static void onActivityResult(Activity context, int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 boolean isGranted = context.getPackageManager().canRequestPackageInstalls();
                 if (!isGranted) {
                     Toast.makeText(context, "安装应用需要打开未知来源权限，请同意", Toast.LENGTH_SHORT).show();
@@ -121,6 +120,26 @@ public class InstallApkCompat {
                 }
             }
         }
+    }
+
+
+    /**
+     * Build uri from file.
+     *
+     * @param context
+     * @param file
+     * @return
+     */
+    public static Uri forUri(Context context, File file) {
+        Uri uri;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            //设置7.0以上共享文件，分享路径定义在xml/file_paths.xml
+            uri = FileProvider.getUriForFile(context, context.getPackageName() + ".UpdaterFileProvider", file);
+        } else {
+            // 7.0以下,共享文件
+            uri = Uri.fromFile(file);
+        }
+        return uri;
     }
 
 }

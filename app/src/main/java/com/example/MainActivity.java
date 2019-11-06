@@ -8,7 +8,6 @@ import androidx.annotation.Nullable;
 
 import com.example.fishyu.fishdemo.R;
 import com.example.updater.ApplicationUpdater;
-import com.example.updater.InstallApkCompat;
 
 public class MainActivity extends Activity {
 
@@ -17,8 +16,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        ApplicationUpdater updater = new ApplicationUpdater(this);
-//        updater.checkNewVersion();
+        ApplicationUpdater updater = new ApplicationUpdater(this);
+        updater.checkNewVersion();
     }
 
 

@@ -20,13 +20,13 @@
         </activity>
 
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="fileprovider"
+            android:name="com.example.updater.UpdaterFileProvider"
+            android:authorities="${applicationId}.UpdaterFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
+                android:resource="@xml/updater_file_paths" />
         </provider>
 
     </application>

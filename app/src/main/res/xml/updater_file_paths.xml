@@ -8,33 +8,38 @@
 
         <!--&lt;!&ndash; 物理路径为Context.getFilesDir() + /files/* &ndash;&gt;-->
         <!--<files-path-->
-            <!--name="files"-->
-            <!--path="files" />-->
+        <!--name="files"-->
+        <!--path="files" />-->
 
         <!-- 物理路径为Context.getCacheDir() + /files/* -->
         <!--<cache-path-->
-            <!--name="cache"-->
-            <!--path="files" />-->
+        <!--name="cache"-->
+        <!--path="files" />-->
 
         <!-- 物理路径为Environment.getExternalStorageDirectory() + /files/* -->
         <!--<external-path-->
-            <!--name="external"-->
-            <!--path="files" />-->
+        <!--name="external"-->
+        <!--path="files" />-->
 
         <!-- 物理路径为Context.getExternalFilesDir(String) + /files/* -->
         <!--<external-files-path-->
-            <!--name="externalfiles"-->
-            <!--path="files" />-->
+        <!--name="externalfiles"-->
+        <!--path="files" />-->
 
         <!-- 物理路径为Context.getExternalCacheDir() + /files/* -->
         <external-cache-path
             name="externalcache"
             path="." />
 
+        <external-cache-path
+            name="download"
+            path="." />
+
+
         <!--物理路径为`Context.getExternalMediaDirs() + /files/*, 要求API21+ -->
         <!--<external-media-path-->
-            <!--name="externalmedia"-->
-            <!--path="." />-->
+        <!--name="externalmedia"-->
+        <!--path="." />-->
 
     </paths>
 </resources>
