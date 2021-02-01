@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+        <import type="com.demo.fishdemoxhb.test.DemoViewModel" />
+
+        <variable
+            name="viewModel"
+            type="DemoViewModel" />
+
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text='@{viewModel.serverData + ""}'
+            android:textColor="@android:color/holo_green_dark"
+            android:textSize="24sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:text='@{String.valueOf(viewModel.serverDataAnalyze)}'
+            android:textColor="@android:color/holo_orange_dark"
+            android:textSize="24sp" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginTop="100dp"
+            android:onClick="@{() -> viewModel.fetchData()}"
+            android:textSize="20sp"
+            android:text="获取数据" />
+
+    </LinearLayout>
+</layout>

@@ -1,0 +1,9 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@android:id/background"
+        android:width="20dp"
+        android:height="20dp"
+        android:drawable="@drawable/img_choice" />
+
+</layer-list>

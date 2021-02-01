@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="20dp">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="7dp"
+        android:layout_marginRight="7dp"
+        android:background="#ffebeced" />
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="7dp"
+        android:background="@drawable/selfpractice_level_bar_little_dot" />
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_centerInParent="true"
+        android:background="@drawable/selfpractice_level_bar_little_dot" />
+
+    <View
+        android:layout_width="6dp"
+        android:layout_height="6dp"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="7dp"
+        android:background="@drawable/selfpractice_level_bar_little_dot" />
+
+    <SeekBar
+        android:id="@+id/seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:outlineSpotShadowColor="#00000000"
+        android:paddingLeft="0dp"
+        android:paddingRight="0dp"
+        android:progress="100"
+        android:progressDrawable="@drawable/selfpractice_seekbar_bg"
+        android:splitTrack="false"
+        android:thumb="@drawable/selfpractice_seekbar_indicator" />
+
+
+</RelativeLayout>

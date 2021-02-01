@@ -1,0 +1,1 @@
+# This module is the bases MVVM with usage of DataBinding
